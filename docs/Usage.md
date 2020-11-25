@@ -53,20 +53,23 @@ e.g. because it could not reach the server. The default is 120 minutes (2 hours)
     -r or --renewal-interval <RENEWALINTERVAL>
 > Instructs clients to renew activation every _RENEWALINTERVAL_ minutes. The default is 10080 minutes (7 days).
 
-    -s or --sqlite
+    -s or --sqlite [<SQLFILE>]
 > Use this option to store request information from unique clients in an SQLite database. Deactivated by default.
 If enabled the default database file is _pykms_database.db_. You can also provide a specific location.
 
-    -t0 or --timeout-idle <TIMEOUT>
+    -t0 or --timeout-idle <TIMEOUTIDLE>
 > Maximum inactivity time (in seconds) after which the connection with the client is closed. 
 Default setting is serve forever (no timeout).
+
+    -t1 or --timeout-sndrcv <TIMEOUTSNDRCV>
+> Set the maximum time (in seconds) to wait for sending / receiving a request / response. Default is no timeout.
 
     -y or --async-msg
 > With high levels of logging (e.g hundreds of log statements), in a traditional synchronous log model, 
 the overhead involved becomes more expensive, so using this option you enable printing (pretty / logging) messages 
 asynchronously reducing time-consuming. Deactivated by default.
 
-    -V or --loglevel <{CRITICAL, ERROR, WARNING, INFO, DEBUG, MINI}>
+    -V or --loglevel <{CRITICAL, ERROR, WARNING, INFO, DEBUG, MININFO}>
 > Use this flag to set a logging loglevel. The default is _ERROR_.
 example:
 ```
@@ -137,6 +140,121 @@ You can also enable other suboptions of `-F` doing what is reported in the follo
     -S or --logsize <MAXSIZE>
 > Use this flag to set a maximum size (in MB) to the output log file. Deactivated by default.
 
+##### subparser `connect`
+
+    -n or --listen <'IP,PORT'>
+> Use this option to add multiple listening ip address - port couples. Note the format with the comma between the ip address and the port number. You can use this option more than once.
+
+    -b or --backlog <BACKLOG>
+> Use this option to specify the maximum length of the queue of pending connections, referred to a ip address - port couple.
+If placed just after `connect` refers to the main address and all additive couples without `-b` option. Default is 5.
+
+    -u or --no-reuse
+> Use this option not to allow binding / listening to the same ip address - port couple specified with `-n`.
+If placed just after `connect` refers to the main address and all additive couples without `-u` option. Reusing port is activated by default (except when running inside the Windows Sandbox and the current user is `WDAGUtilityAccount`).
+
+    -d or --dual
+> Use this option to allow listening to an IPv6 address also accepting connections via IPv4.
+If used it refers to all addresses (main and additional). Deactivated by default.
+
+examples (with fictitious addresses and ports):
+<table style="width: 100%;">
+    <thead>
+        <tr>
+            <th>command</th>
+            <th>address (main)</th>
+            <th>backlog (main)</th>
+            <th>reuse port (main)</th>
+            <th>address (listen)</th>
+            <th>backlog (listen)</th>
+            <th>reuse port (listen)</th>
+            <th>dualstack (main / listen)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><pre>python3 pykms_Server.py connect -b 12</pre></td>
+            <td>('0.0.0.0', 1688)</td>
+            <td>12</td>
+            <td>True</td>
+            <td>[]</td>
+            <td>[]</td>
+            <td>[]</td>
+            <td>False</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py :: connect -b 12 -u -d</pre></td>
+            <td>('::', 1688)</td>
+            <td>12</td>
+            <td>False</td>
+            <td>[]</td>
+            <td>[]</td>
+            <td>[]</td>
+            <td>True</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py connect -n 1.1.1.1,1699 -b 10</pre></td>
+            <td>('0.0.0.0', 1688)</td>
+            <td>5</td>
+            <td>True</td>
+            <td>[('1.1.1.1', 1699)]</td>
+            <td>[10]</td>
+            <td>[True]</td>
+            <td>False</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py :: 1655 connect -n 2001:db8:0:200::7,1699 -d -b 10 -n 2.2.2.2,1677 -u</pre></td>
+            <td>('::', 1655)</td>
+            <td>5</td>
+            <td>True</td>
+            <td>[('2001:db8:0:200::7', 1699), ('2.2.2.2', 1677)]</td>
+            <td>[10, 5]</td>
+            <td>[True, False]</td>
+            <td>True</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py connect -b 12 -u -n 1.1.1.1,1699 -b 10 -n 2.2.2.2,1677 -b 15</pre></td>
+            <td>('0.0.0.0', 1688)</td>
+            <td>12</td>
+            <td>False</td>
+            <td>[('1.1.1.1', 1699), ('2.2.2.2', 1677)]</td>
+            <td>[10, 15]</td>
+            <td>[False, False]</td>
+            <td>False</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py connect -b 12 -n 1.1.1.1,1699 -u -n 2.2.2.2,1677</pre></td>
+            <td>('0.0.0.0', 1688)</td>
+            <td>12</td>
+            <td>True</td>
+            <td>[('1.1.1.1', 1699), ('2.2.2.2', 1677)]</td>
+            <td>[12, 12]</td>
+            <td>[False, True]</td>
+            <td>False</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py connect -d -u -b 8 -n 1.1.1.1,1699 -n 2.2.2.2,1677 -b 12</pre></td>
+            <td>('0.0.0.0', 1688)</td>
+            <td>8</td>
+            <td>False</td>
+            <td>[('1.1.1.1', 1699), ('2.2.2.2', 1677)]</td>
+            <td>[8, 12]</td>
+            <td>[False, False]</td>
+            <td>True</td>
+        </tr>
+        <tr>
+            <td><pre>python3 pykms_Server.py connect -b 11 -u -n ::,1699 -n 2.2.2.2,1677</pre></td>
+            <td>('0.0.0.0', 1688)</td>
+            <td>11</td>
+            <td>False</td>
+            <td>[('::', 1699), ('2.2.2.2', 1677)]</td>
+            <td>[11, 11]</td>
+            <td>[False, False]</td>
+            <td>False</td>
+        </tr>
+    </tbody>
+</table>
+
 ### pykms_Client.py
 If _py-kms_ server doesn't works correctly, you can test it with the KMS client `pykms_Client.py`, running on the same machine where you started `pykms_Server.py`.
 
@@ -162,7 +280,7 @@ You can also put further parameters as defined below:
     -m or --mode <{WindowsVista, Windows7, Windows8, Windows8.1, Windows10, Office2010, Office2013, Office2016, Office2019}>
 > Use this flag to manually specify a Microsoft _PRODUCTNAME_ for testing the KMS server. Default is Windows8.1.
 
-   -c or --cmid <CMID>
+    -c or --cmid <CMID>
 > Use this flag to manually specify a CMID to use. If no CMID is specified, a random one will be generated.
 The Microsoft KMS host machine identifies KMS clients with a unique Client Machine ID 
 (CMID,   example: ae3a27d1-b73a-4734-9878-70c949815218). For a KMS client to successfully activate, the KMS server 
@@ -176,10 +294,16 @@ activate regardless of CMID being unique for a subset of specific machines or no
     -n or --name <MACHINENAME>
 > Use this flag to manually specify an ASCII _MACHINENAME_ to use. If no _MACHINENAME_ is specified a random one will be generated.
 
+    -t0 or --timeout-idle <TIMEOUTIDLE>
+> Set the maximum time (in seconds) to wait for a connection attempt to KMS server to succeed. Default is no timeout.
+
+    -t1 or --timeout-sndrcv <TIMEOUTSNDRCV>
+> Set the maximum time (in seconds) to wait for sending / receiving a request / response. Default is no timeout.
+
     -y or --async-msg
 > Prints pretty / logging messages asynchronously. Deactivated by default.
 
-    -V or --loglevel <{CRITICAL, ERROR, WARNING, INFO, DEBUG, MINI}>
+    -V or --loglevel <{CRITICAL, ERROR, WARNING, INFO, DEBUG, MININFO}>
 > Use this flag to set a logging loglevel. The default is _ERROR_.
 
     -F or --logfile <LOGFILE>
@@ -188,6 +312,61 @@ You can enable same _pykms_Server.py_ suboptions of `-F`.
 
     -S or --logsize <MAXSIZE>
 > Use this flag to set a maximum size (in MB) to the output log file. Deactivated by default.
+
+## Docker Environment
+This are the currently used `ENV` statements from the Dockerfile(s). For further references what exactly the parameters mean, please see the start parameters for the [server](Usage.html#pykms-server-py).
+```
+# IP-address
+# The IP address to listen on. The default is "0.0.0.0" (all interfaces).
+ENV IP 0.0.0.0
+
+# TCP-port
+# The network port to listen on. The default is "1688".
+ENV PORT 1688
+
+# ePID
+# Use this flag to manually specify an ePID to use. If no ePID is specified, a random ePID will be generated.
+ENV EPID ""
+
+# lcid
+# Use this flag to manually specify an LCID for use with randomly generated ePIDs. Default is 1033 (en-us).
+ENV LCID 1033
+
+# The current client count
+# Use this flag to specify the current client count. Default is 26.
+# A number >=25 is required to enable activation of client OSes; for server OSes and Office >=5.
+ENV CLIENT_COUNT 26
+
+# The activation interval (in minutes)
+# Use this flag to specify the activation interval (in minutes). Default is 120 minutes (2 hours).
+ENV ACTIVATION_INTERVAL 120
+
+# The renewal interval (in minutes)
+# Use this flag to specify the renewal interval (in minutes). Default is 10080 minutes (7 days).
+ENV RENEWAL_INTERVAL 10080
+
+# Use SQLITE
+# Use this flag to store request information from unique clients in an SQLite database.
+ENV SQLITE false
+
+# hwid
+# Use this flag to specify a HWID. 
+# The HWID must be an 16-character string of hex characters.
+# The default is "364F463A8863D35F" or type "RANDOM" to auto generate the HWID.
+ENV HWID 364F463A8863D35F
+
+# log level ("CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG")
+# Use this flag to set a Loglevel. The default is "ERROR".
+ENV LOGLEVEL ERROR
+
+# Log file
+# Use this flag to set an output Logfile. The default is "/var/log/pykms_logserver.log".
+ENV LOGFILE /var/log/pykms_logserver.log
+
+# Log file size in MB
+# Use this flag to set a maximum size (in MB) to the output log file. Deactivated by default.
+ENV LOGSIZE ""
+```
 
 ## Activation Procedure
 The product asks for a key during installation, so it needs you to enter the GVLK. Then the user can set connection parameters, while KMS server must already be running on server machine. Finally with specific commands, activation occurs automatically and can be extended later every time for another 180 (or 30 or 45) days.
@@ -204,8 +383,9 @@ The `//nologo` option of `cscript` was used only to hide the startup logo.
 1. This is optional, it's for unistalling any existing product key.
 2. Then put in your product's GVLK.
 3. Set connection parameters.
-4. Try online activation, but... if that fails with error `0xC004F074` you’ll most likely have to configure your firewall that it accepts incoming connections on TCP port 1688. So for Linux users (server-side with `pykms_Server.py`
-    running): `sudo ufw allow 1688` (to remove this rule `sudo ufw delete allow 1688`)
+4. Try online activation, but if that fails with error...
+    - `0xC004F074` You’ll most likely have to configure your firewall that it accepts incoming connections on TCP port 1688. So for Linux users (server-side with `pykms_Server.py` running): `sudo ufw allow 1688` (revert this rule `sudo ufw delete allow 1688`) should fix that.
+    - `0xC004F069` Take a look into the [issue here](https://github.com/SystemRage/py-kms/issues/57), it will may help you...
 5. Attempt online activation (now with traffic on 1688 enabled). 
 6. View license informations (optional).
 
@@ -231,8 +411,3 @@ Note that you’ll have to install a volume license (VL) version of Office. Offi
 6. Set the connection parameter KMS server port.
 7. Activate installed Office product key.
 8. View license informations (in my case product is now licensed and remaining grace 180 days as expected).
-
-## Supported Products
-Note that it is possible to activate all versions in the VL (Volume License) channel, so long as you provide the proper key to let Windows know that it should be activating against a KMS server. KMS activation can't be used for
-Retail channel products, however you can install a VL product key specific to your edition of Windows even if it was installed as Retail. This effectively converts Retail installation to VL channel and will allow you to activate
-from a KMS server. **However, this is not valid for Office's products**, so Office, Project and Visio must be always volume license versions. Newer version may work as long as the KMS protocol does not change...

@@ -7,6 +7,7 @@ from collections import OrderedDict
 import logging
 from io import StringIO
 import queue as Queue
+from tempfile import gettempdir
 
 #----------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -54,14 +55,15 @@ def justify(astring, indent = 35, break_every = 100):
     return justy
 
 ##----------------------------------------------------------------------------------------------------------------------------------------------------
-ColorMap = {'gray'       : '\x1b[90m',
+ColorMap = {'black'      : '\x1b[90m',
             'red'        : '\x1b[91m',
-            'green'      : '\x1b[92m',
+            'green'      : '\x1b[38;2;0;238;118m', # '\x1b[92m'
             'yellow'     : '\x1b[93m',
             'blue'       : '\x1b[94m',
-            'magenta'    : '\x1b[95m',
+            'magenta'    : '\x1b[38;2;205;0;205m', # '\x1b[95m'
             'cyan'       : '\x1b[96m',
-            'white'      : '\x1b[97m'
+            'white'      : '\x1b[97m',
+            'orange'     : '\x1b[38;2;255;165;0m'
             }
 
 ExtraMap = {'end'        : '\x1b[0m',
@@ -80,32 +82,32 @@ ColorExtraMap = dict(ColorMap, **ExtraMap)
 ColorMapReversed = dict(zip(ColorMap.values(), ColorMap.keys()))
 ExtraMapReversed = dict(zip(ExtraMap.values(), ExtraMap.keys()))
 
-MsgMap = {0  : {'text' : "{yellow}\n\t\t\tClient generating RPC Bind Request...{end}",                               'align' : ()},
-          1  : {'text' : "{white}<==============={end}{yellow}\tClient sending RPC Bind Request...{end}",            'align' : ()},
-          2  : {'text' : "{yellow}Server received RPC Bind Request !!!\t\t\t\t{end}{white}<==============={end}",    'align' : ()},
-          3  : {'text' : "{yellow}Server parsing RPC Bind Request...{end}",                                          'align' : ()},
-          4  : {'text' : "{yellow}Server generating RPC Bind Response...{end}",                                      'align' : ()},
-          5  : {'text' : "{yellow}Server sending RPC Bind Response...\t\t\t\t{end}{white}===============>{end}",     'align' : ()},
-          6  : {'text' : "{green}{bold}\nRPC Bind acknowledged !!!{end}",                                            'align' : ()},
-          7  : {'text' : "{white}===============>{end}{yellow}\tClient received RPC Bind Response !!!{end}",         'align' : ()},
-          8  : {'text' : "{green}{bold}\t\t\tRPC Bind acknowledged !!!{end}",                                        'align' : ()},
-          9  : {'text' : "{blue}\t\t\tClient generating Activation Request dictionary...{end}",                      'align' : ()},
-          10 : {'text' : "{blue}\t\t\tClient generating Activation Request data...{end}",                            'align' : ()},
-          11 : {'text' : "{blue}\t\t\tClient generating RPC Activation Request...{end}",                             'align' : ()},
-          12 : {'text' : "{white}<==============={end}{blue}\tClient sending RPC Activation Request...{end}",        'align' : ()},
-          13 : {'text' : "{blue}Server received RPC Activation Request !!!\t\t\t{end}{white}<==============={end}",  'align' : ()},
-          14 : {'text' : "{blue}Server parsing RPC Activation Request...{end}",                                      'align' : ()},
-          15 : {'text' : "{blue}Server processing KMS Activation Request...{end}",                                   'align' : ()},
-          16 : {'text' : "{blue}Server processing KMS Activation Response...{end}",                                  'align' : ()},
-          17 : {'text' : "{blue}Server generating RPC Activation Response...{end}",                                  'align' : ()},
-          18 : {'text' : "{blue}Server sending RPC Activation Response...\t\t\t{end}{white}===============>{end}",   'align' : ()},
-          19 : {'text' : "{green}{bold}\nServer responded, now in Stand by...\n{end}",                               'align' : ()},
-          20 : {'text' : "{white}===============>{end}{blue}\tClient received Response !!!{end}",                    'align' : ()},
-          21 : {'text' : "{green}{bold}\t\t\tActivation Done !!!{end}",                                              'align' : ()},
-          -1 : {'text' : "{white}Server receiving{end}",                                                             'align' : ()},
-          -2 : {'text' : "{white}\t\t\t\t\t\t\t\tClient sending{end}",                                               'align' : ()},
-          -3 : {'text' : "{white}\t\t\t\t\t\t\t\tClient receiving{end}",                                             'align' : ()},
-          -4 : {'text' : "{white}Server sending{end}",                                                               'align' : ()},
+MsgMap = {0  : {'text' : "{{yellow}}{}{}Client generating RPC Bind Request...{{end}}"                                  .format('\n', '\t' * 3)},
+          1  : {'text' : "{{white}}<==============={{end}}{{yellow}}{}Client sending RPC Bind Request...{{end}}"       .format('\t')},
+          2  : {'text' : "{{yellow}}Server received RPC Bind Request !!!{}{{end}}{{white}}<==============={{end}}"     .format('\t' * 4)},
+          3  : {'text' : "{{yellow}}Server parsing RPC Bind Request...{{end}}"                                         .format()},
+          4  : {'text' : "{{yellow}}Server generating RPC Bind Response...{{end}}"                                     .format()},
+          5  : {'text' : "{{yellow}}Server sending RPC Bind Response...{}{{end}}{{white}}===============>{{end}}"      .format('\t' * 4)},
+          6  : {'text' : "{{green}}{{bold}}{}RPC Bind acknowledged !!!{{end}}"                                         .format('\n')},
+          7  : {'text' : "{{white}}===============>{{end}}{{yellow}}{}Client received RPC Bind Response !!!{{end}}"    .format('\t')},
+          8  : {'text' : "{{green}}{{bold}}{}RPC Bind acknowledged !!!{{end}}"                                         .format('\t' * 3)},
+          9  : {'text' : "{{blue}}{}Client generating Activation Request dictionary...{{end}}"                         .format('\t' * 3)},
+          10 : {'text' : "{{blue}}{}Client generating Activation Request data...{{end}}"                               .format('\t' * 3)},
+          11 : {'text' : "{{blue}}{}Client generating RPC Activation Request...{{end}}"                                .format('\t' * 3)},
+          12 : {'text' : "{{white}}<==============={{end}}{{blue}}{}Client sending RPC Activation Request...{{end}}"   .format('\t')},
+          13 : {'text' : "{{blue}}Server received RPC Activation Request !!!{}{{end}}{{white}}<==============={{end}}" .format('\t' * 3)},
+          14 : {'text' : "{{blue}}Server parsing RPC Activation Request...{{end}}"                                     .format()},
+          15 : {'text' : "{{blue}}Server processing KMS Activation Request...{{end}}"                                  .format()},
+          16 : {'text' : "{{blue}}Server processing KMS Activation Response...{{end}}"                                 .format()},
+          17 : {'text' : "{{blue}}Server generating RPC Activation Response...{{end}}"                                 .format()},
+          18 : {'text' : "{{blue}}Server sending RPC Activation Response...{}{{end}}{{white}}===============>{{end}}"  .format('\t' * 3)},
+          19 : {'text' : "{{green}}{{bold}}{}Server responded, now in Stand by...{}{{end}}"                            .format('\n','\n')},
+          20 : {'text' : "{{white}}===============>{{end}}{{blue}}{}Client received Response !!!{{end}}"               .format('\t')},
+          21 : {'text' : "{{green}}{{bold}}{}Activation Done !!!{{end}}"                                               .format('\t' * 3)},
+          -1 : {'text' : "{{white}}Server receiving{{end}}"                                                            .format()},
+          -2 : {'text' : "{{white}}{}Client sending{{end}}"                                                            .format('\t' * 8)},
+          -3 : {'text' : "{{white}}{}Client receiving{{end}}"                                                          .format('\t' * 8)},
+          -4 : {'text' : "{{white}}Server sending{{end}}"                                                              .format()},
           }
 
 def unformat_message(symbolic_string_list):
@@ -175,7 +177,7 @@ queue_print = Queue.Queue()
 class ShellMessage(object):
     viewsrv, viewclt = (True for _ in range(2))
     asyncmsgsrv, asyncmsgclt = (False for _ in range(2))
-    indx, count, remain, numlist = (0, 0, 0, [])
+    indx, count, remain, numlist, dummy = (0, 0, 0, [], False)
     loggersrv_pty = logging.getLogger('logsrvpty')
     loggerclt_pty = logging.getLogger('logcltpty')
 
@@ -191,8 +193,8 @@ class ShellMessage(object):
             self.put_text = put_text
             self.where = where
             self.plaintext = []
-            self.path_nl = os.path.dirname(os.path.abspath( __file__ )) + '/pykms_newlines.txt'
-            self.path_clean_nl = os.path.dirname(os.path.abspath( __file__ )) + '/pykms_clean_newlines.txt'
+            self.path_nl = os.path.join(gettempdir(), 'pykms_newlines.txt')
+            self.path_clean_nl = os.path.join(gettempdir(), 'pykms_clean_newlines.txt')
             self.queue_get = Queue.Queue()
 
         def formatter(self, msgtofrmt):
@@ -209,7 +211,7 @@ class ShellMessage(object):
                     pass
             self.msgfrmt = msgtofrmt.format(**ColorExtraMap)
             if self.get_text:
-                self.plaintext.append(unshell_message(self.msgfrmt, count = 0)[0]["tag00"]['text'])
+                self.plaintext.append(unshell_message(self.msgfrmt, count = 0)[0]["tag00"]['text'].strip())
 
         def newlines_file(self, mode, *args):
             try:
@@ -253,12 +255,12 @@ class ShellMessage(object):
                 with open(self.path_clean_nl, 'r') as file:
                     some = file.read()
                 if num == 21:
-                    ShellMessage.count, ShellMessage.remain, ShellMessage.numlist = (0, 0, [])
+                    ShellMessage.count, ShellMessage.remain, ShellMessage.numlist, ShellMessage.dummy = (0, 0, [], False)
                     os.remove(self.path_nl)
                     os.remove(self.path_clean_nl)
             except:
                 if num == 19:
-                    ShellMessage.count, ShellMessage.remain, ShellMessage.numlist = (0, 0, [])
+                    ShellMessage.count, ShellMessage.remain, ShellMessage.numlist, ShellMessage.dummy = (0, 0, [], False)
                     os.remove(self.path_nl)
 
         def putter(self, aqueue, toput):
@@ -365,11 +367,14 @@ class ShellMessage(object):
                     for msg in self.put_text:
                         ShellMessage.count += msg.count('\n')
                         # Append a dummy element.
-                        ShellMessage.numlist.append('put')
+                        if ShellMessage.dummy:
+                            ShellMessage.numlist.append('put')
                         self.formatter(msg)
                         print(self.msgfrmt, end = '\n', flush = True)
                 else:
                     for num in self.nshell:
+                        if num == 0:
+                            ShellMessage.dummy = True
                         self.newlines_count(num)
                         self.formatter(MsgMap[num])
                         print(self.msgfrmt, end = '\n', flush = True)

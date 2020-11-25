@@ -66,8 +66,8 @@ class LevelFormatter(logging.Formatter):
                         self.formatters[loglevel] = logging.Formatter(formats[loglevel], datefmt = self.dfmt)
 
         def colorize(self, formats, loglevel):
-                if loglevel == logging.MINI:
-                        frmt = '{gray}' + formats[loglevel] + '{end}'
+                if loglevel == logging.MININFO:
+                        frmt = '{orange}' + formats[loglevel] + '{end}'
                 elif loglevel == logging.CRITICAL:
                         frmt = '{magenta}{bold}' + formats[loglevel] + '{end}'
                 elif loglevel == logging.ERROR:
@@ -153,7 +153,8 @@ class MultiProcessingLogHandler(logging.Handler):
 
 def logger_create(log_obj, config, mode = 'a'):
         # Create new level.
-        add_logging_level('MINI', logging.CRITICAL + 10)
+        num_lvl_mininfo = 25
+        add_logging_level('MININFO', num_lvl_mininfo)
         log_handlers = []
 
         # Configure visualization.
@@ -188,13 +189,19 @@ def logger_create(log_obj, config, mode = 'a'):
         levelnum = [k for k in levelnames if k != 0]
 
         frmt_gen = '%(asctime)s %(levelname)-8s %(message)s'
-        frmt_std = '%(name)s %(asctime)s %(levelname)-8s %(message)s'
-        frmt_min = '[%(asctime)s] [%(levelname)-8s]   %(host)s   %(status)s   %(product)s   %(message)s'
+        frmt_std = '%(asctime)s %(levelname)-8s %(message)s'
+        frmt_min = '%(asctime)s %(levelname)-8s %(host)s   %(status)s   %(product)s  %(message)s'
+        frmt_name = '%(name)s '
+
+        from pykms_Server import serverthread
+        if serverthread.with_gui:
+                frmt_std = frmt_name + frmt_std
+                frmt_min = frmt_name + frmt_min
 
         def apply_formatter(levelnum, formats, handler, color = False):
                 levelformdict = {}
                 for num in levelnum:
-                        if num != logging.CRITICAL + 10:
+                        if num != num_lvl_mininfo:
                                 levelformdict[num] = formats[0]
                         else:
                                 levelformdict[num] = formats[1]
@@ -220,25 +227,32 @@ def logger_create(log_obj, config, mode = 'a'):
         log_obj.setLevel(config['loglevel'])
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
+def check_dir(path, where, log_obj = None, argument = '-F/--logfile', typefile = '.log'):
+        filename = os.path.basename(path)
+        pathname = os.path.dirname(path)
+        extension = os.path.splitext(filename)[1]
+
+        if pathname == os.sep:
+                pathname += filename
+
+        msg_dir  = "{reverse}{red}{bold}argument `%s`: invalid directory: '%s'. Exiting...{end}"
+        msg_fil = "{reverse}{red}{bold}argument `%s`: not a %s file, invalid extension: '%s'. Exiting...{end}"
+
+        if not os.path.isdir(pathname):
+                if path.count('/') == 0:
+                        pathname = filename
+                pretty_printer(log_obj = log_obj, where = where, to_exit = True,
+                               put_text = msg_dir %(argument, pathname))
+        elif not extension.lower() == typefile:
+                pretty_printer(log_obj = log_obj, where = where, to_exit = True,
+                               put_text = msg_fil %(argument, typefile, extension))
 
 def check_logfile(optionlog, defaultlog, where):
         if not isinstance(optionlog, list):
                 optionlog = [optionlog]
 
         lenopt = len(optionlog)
-        msg_dir  = "{reverse}{red}{bold}argument `-F/--logfile`: invalid directory: '%s'. Exiting...{end}"
         msg_long = "{reverse}{red}{bold}argument `-F/--logfile`: too much arguments. Exiting...{end}"
-        msg_log = "{reverse}{red}{bold}argument `-F/--logfile`: not a log file, invalid extension: '%s'. Exiting...{end}"
-
-        def checkdir(path):
-                filename = os.path.basename(path)
-                pathname = os.path.dirname(path)
-                if not os.path.isdir(pathname):
-                        if path.count('/') == 0:
-                                pathname = filename
-                        pretty_printer(put_text = msg_dir %pathname, where = where, to_exit = True)
-                elif not filename.lower().endswith('.log'):
-                        pretty_printer(put_text = msg_log %filename, where = where, to_exit = True)
 
         if lenopt > 2:
                 pretty_printer(put_text = msg_long, where = where, to_exit = True)
@@ -249,13 +263,13 @@ def check_logfile(optionlog, defaultlog, where):
                         optionlog.append(defaultlog)
                 elif lenopt == 2:
                         # check directory path.
-                        checkdir(optionlog[1])
+                        check_dir(optionlog[1], where)
         else:
                 if lenopt == 2:
                         pretty_printer(put_text = msg_long, where = where, to_exit = True)
                 elif lenopt == 1 and (any(opt not in ['STDOUT', 'FILEOFF'] for opt in optionlog)):
                         # check directory path.
-                        checkdir(optionlog[0])
+                        check_dir(optionlog[0], where)
 
         return optionlog
 
@@ -324,22 +338,32 @@ class KmsParserHelp(object):
                 return help_list
 
         def printer(self, parsers):
-                if len(parsers) == 3:
-                        parser_base, parser_adj, parser_sub = parsers
-                        replace_epilog_with = 80 * '*' + '\n'
-                elif len(parsers) == 1:
-                        parser_base = parsers[0]
+                parser_base = parsers[0]
+                if len(parsers) == 1:
                         replace_epilog_with = ''
+                else:
+                        parser_adj_0, parser_sub_0 = parsers[1]
+                        replace_epilog_with = 80 * '*' + '\n'
+                        if len(parsers) == 3:
+                                parser_adj_1, parser_sub_1 = parsers[2]
+
                 print('\n' + parser_base.description)
                 print(len(parser_base.description) * '-' + '\n')
                 for line in self.replace(parser_base, replace_epilog_with):
                         print(line)
-                try:
-                        print(parser_adj.description + '\n')
-                        for line in self.replace(parser_sub, replace_epilog_with):
+
+                def subprinter(adj, sub, replace):
+                        print(adj.description + '\n')
+                        for line in self.replace(sub, replace):
                                 print(line)
-                except:
-                        pass
+                        print('\n')
+
+                if len(parsers) >= 2:
+                        subprinter(parser_adj_0, parser_sub_0, replace_epilog_with)
+                        if len(parsers) == 3:
+                                print(replace_epilog_with)
+                                subprinter(parser_adj_1, parser_sub_1, replace_epilog_with)
+
                 print('\n' + len(parser_base.epilog) * '-')
                 print(parser_base.epilog + '\n')
                 parser_base.exit()
@@ -349,13 +373,13 @@ def kms_parser_get(parser):
         act = vars(parser)['_actions']
         for i in range(len(act)):
                 if act[i].option_strings not in ([], ['-h', '--help']):
-                        if isinstance(act[i], argparse._StoreAction):
+                        if isinstance(act[i], argparse._StoreAction) or isinstance(act[i], argparse._AppendAction):
                                 onearg.append(act[i].option_strings)
                         else:
                                 zeroarg.append(act[i].option_strings)
         return zeroarg, onearg
 
-def kms_parser_check_optionals(userarg, zeroarg, onearg, msg = 'optional py-kms server', exclude_opt_len = []):
+def kms_parser_check_optionals(userarg, zeroarg, onearg, msg = 'optional py-kms server', exclude_opt_len = [], exclude_opt_dup = []):
         """
         For optionals arguments:
         Don't allow duplicates,
@@ -368,29 +392,35 @@ def kms_parser_check_optionals(userarg, zeroarg, onearg, msg = 'optional py-kms 
         allarg = zeroarg + onearg
 
         def is_abbrev(allarg, arg_to_check):
+                extended = []
                 for opt in allarg:
                         if len(opt) > 2 and opt[2] == arg_to_check[2]:
                                 for indx in range(-1, -len(opt), -1):
                                         if opt[:indx] == arg_to_check:
-                                                raise KmsParserException("%s argument `%s` abbreviation not allowed for `%s`" %(msg, arg_to_check, opt))
-                return False
+                                                extended.append(opt)
+                return extended
 
         # Check abbreviations, joining, not existing.
         for arg in userarg:
                 if arg not in allarg:
                         if arg.startswith('-'):
-                                if arg == '--' or arg[:2] != '--' or not is_abbrev(allarg, arg):
+                                if arg == '--' or arg[:2] != '--':
                                         raise KmsParserException("unrecognized %s arguments: `%s`" %(msg, arg))
+                                else:
+                                        extended = is_abbrev(allarg, arg)
+                                        if extended:
+                                                raise KmsParserException("%s argument `%s` abbreviation not allowed for `%s`" %(msg, arg, ', '.join(extended)))
 
         # Check duplicates.
         founds = [i for i in userarg if i in allarg]
         dup = [item for item in set(founds) if founds.count(item) > 1]
-        if dup != []:
-                raise KmsParserException("%s argument `%s` appears several times" %(msg, ', '.join(dup)))
+        for d in dup:
+                if d not in exclude_opt_dup:
+                        raise KmsParserException("%s argument `%s` appears several times" %(msg, ', '.join(dup)))
 
         # Check length.
         elem = None
-        for found in founds:
+        for found in set(founds):
                 if found not in exclude_opt_len:
                         pos = userarg.index(found)
                         try:
@@ -418,6 +448,69 @@ def kms_parser_check_positionals(config, parse_method, arguments = [], force_par
                         raise
                 else:
                         raise KmsParserException("unrecognized %s arguments: '%s'" %(msg, e.split(': ')[1]))
+
+def kms_parser_check_connect(config, options, userarg, zeroarg, onearg):
+        if 'listen' in config:
+                try:
+                        lung = len(config['listen'])
+                except TypeError:
+                        raise KmsParserException("optional connect arguments missing")
+
+                rng = range(lung - 1)
+                config['backlog_main'] = options['backlog']['def']
+                config['reuse_main'] = options['reuse']['def']
+
+                def assign(arguments, index, options, config, default, islast = False):
+                        if all(opt not in arguments for opt in options):
+                                if config and islast:
+                                        config.append(default)
+                                elif config:
+                                        config.insert(index, default)
+                                else:
+                                        config.append(default)
+
+                def assign_main(arguments, config):
+                        if any(opt in arguments for opt in ['-b', '--backlog']):
+                                config['backlog_main'] = config['backlog'][0]
+                                config['backlog'].pop(0)
+                        if any(opt in arguments for opt in ['-u', '--no-reuse']):
+                                config['reuse_main'] = config['reuse'][0]
+                                config['reuse'].pop(0)
+
+                if config['listen']:
+                        # check before.
+                        pos = userarg.index(config['listen'][0])
+                        assign_main(userarg[1 : pos - 1], config)
+
+                        # check middle.
+                        for indx in rng:
+                                pos1 = userarg.index(config['listen'][indx])
+                                pos2 = userarg.index(config['listen'][indx + 1])
+                                arguments = userarg[pos1 + 1 : pos2 - 1]
+                                kms_parser_check_optionals(arguments, zeroarg, onearg, msg = 'optional connect')
+                                assign(arguments, indx, ['-b', '--backlog'], config['backlog'], config['backlog_main'])
+                                assign(arguments, indx, ['-u', '--no-reuse'], config['reuse'], config['reuse_main'])
+
+                                if not arguments:
+                                        config['backlog'][indx] = config['backlog_main']
+                                        config['reuse'][indx] = config['reuse_main']
+
+                        # check after.
+                        if lung == 1:
+                                indx = -1
+
+                        pos = userarg.index(config['listen'][indx + 1])
+                        arguments = userarg[pos + 1:]
+                        kms_parser_check_optionals(arguments, zeroarg, onearg, msg = 'optional connect')
+                        assign(arguments, None, ['-b', '--backlog'], config['backlog'], config['backlog_main'], islast = True)
+                        assign(arguments, None, ['-u', '--no-reuse'], config['reuse'], config['reuse_main'], islast = True)
+
+                        if not arguments:
+                                config['backlog'][indx + 1] = config['backlog_main']
+                                config['reuse'][indx + 1] = config['reuse_main']
+                else:
+                        assign_main(userarg[1:], config)
+
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 def proper_none(dictionary):
@@ -462,6 +555,15 @@ def check_setup(config, options, logger, where):
         if (config['port'] == "") or (not 1 <= config['port'] <= 65535):
                 pretty_printer(log_obj = logger.error, where = where, to_exit = True,
                                put_text = "{reverse}{red}{bold}Port number '%s' is invalid. Enter between 1 - 65535. Exiting...{end}" %config['port'])
+
+def check_other(config, options, logger, where):
+        for dest, stropt in options:
+                try:
+                        config[dest] = int(config[dest])
+                except:
+                        if config[dest] is not None:
+                                pretty_printer(log_obj = logger.error, where = where, to_exit = True,
+                                               put_text = "{reverse}{red}{bold}argument `%s`: invalid with: '%s'. Exiting...{end}" %(stropt, config[dest]))
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 

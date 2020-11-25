@@ -17,14 +17,65 @@ command will download, "install" and start _py-kms_ and also keep it alive after
 ```bash
 docker run -d --name py-kms --restart always -p 1688:1688 pykmsorg/py-kms
 ```
+If you just want to use the image and don't want to build them yourself, you can always use the official image at the [Docker Hub](https://hub.docker.com/r/pykmsorg/py-kms) (`pykmsorg/py-kms`). To ensure that you are using always the
+latest version you should check something like [watchtower](https://github.com/containrrr/watchtower) out !
 
+#### Tags
 There are currently three tags of the image available (select one just by appending `:<tag>` to the image from above):
 * `latest`, currently the same like `minimal`.
 * `minimal`, which is based on the python3 minimal configuration of py-kms. _This tag does NOT include `sqlite` support !_
-* `python3`, which is fully configurable and equipped with `sqlite` support and a web interface for management.
+* `python3`, which is fully configurable and equipped with `sqlite` support and a web interface (make sure to expose port 8080) for management.
 
-If you just want to use the image and don't want to build them yourself, you can always use the official image at the [Docker Hub](https://hub.docker.com/r/pykmsorg/py-kms) (`pykmsorg/py-kms`). To ensure that you are using always the
-latest version you should check something like [watchtower](https://github.com/containrrr/watchtower) out !
+#### Architectures
+There are currently the following architectures available (if you need an other, feel free to open an issue):
+* `amd64`
+* `arm32v6` Raspberry PI 1 (A, A+, B, B+, Zero)
+* `arm32v7` Raspberry PI 2 (B)
+* `arm64v8` Raspberry PI 2 (B v1.2), Raspberry PI 3 (A+, B, B+), Raspberry PI 4 (B)
+
+_Please note that any architecture other than the classic `amd64` is slightly bigger (~4 MB), caused by the use of qemu during building._
+
+#### Docker Compose
+You can use `docker-compose` instead of building and running the Dockerfile, so you do not need to respecify your settings again and again. The following Docker Compose file will deploy the `latest` image with the log into your local directory.
+```yaml
+version: '3'
+
+services:
+  kms:
+    image: pykmsorg/py-kms:latest
+    ports:
+      - 1688:1688
+    environment:
+      - IP=0.0.0.0
+      - SQLITE=true
+      - HWID=RANDOM
+      - LOGLEVEL=INFO
+      - LOGSIZE=2
+      - LOGFILE=/var/log/pykms_logserver.log
+    restart: always
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./:/var/log:rw
+```
+
+#### Parameters
+Below is a fully expanded run command, detailing all the different supported environment variables to set. For further reference see the [start parameters](Usage.html#docker-environment) for the docker environment.
+```bash
+docker run -it -d --name py3-kms \
+    -p 8080:8080 \
+    -p 1688:1688 \
+    -e IP=0.0.0.0 \
+    -e PORT=1688 \
+    -e SQLITE=true \
+    -e HWID=RANDOM \
+    -e LOGLEVEL=INFO \
+    -e LOGSIZE=2 \
+    -e LOGFILE=/var/log/pykms_logserver.log \
+    -v /etc/localtime:/etc/localtime:ro \
+    -v /var/log:/var/log:rw \
+    --restart unless-stopped pykmsorg/py-kms:[TAG]
+```
+You can omit the `-e SQLITE=...` and `-p 8080:8080` option if you plan to use the `minimal` or `latest` image, which does not include the respective module support.
 
 ### Systemd
 If you are running a Linux distro using `systemd`, create the file: `sudo nano /etc/systemd/system/py3-kms.service`, then add the following (change it where needed) and save:
@@ -166,7 +217,7 @@ The following are just some brief notes about parameters handling. For a more de
 - To generate a random HWID use `-w` option: `python3 pykms_Server.py -w RANDOM`.
 - To get the HWID from any server use the client, for example type: `python3 pykms_Client.py :: 1688 -m Windows8.1 -V INFO`.
 - To change your logfile path use `-F` option, for example: `python3 pykms_Server.py -F /path/to/your/logfile.log -V DEBUG`.
-- To view a minimal set of logging information use `-V MINI` option, for example: `python3 pykms_Server.py -F /path/to/your/logfile.log -V MINI`.
+- To view a minimal set of logging information use `-V MININFO` option, for example: `python3 pykms_Server.py -F /path/to/your/logfile.log -V MININFO`.
 - To redirect logging on stdout use `-F STDOUT` option, for example: `python3 pykms_Server.py -F STDOUT -V DEBUG`.
 - You can create logfile and view logging information on stdout at the same time with `-F FILESTDOUT` option, for example: `python3 pykms_Server.py -F FILESTDOUT /path/to/your/logfile.log -V DEBUG`.
 - With `-F STDOUTOFF` you disable all stdout messages (but a logfile will be created), for example: `python3 pykms_Server.py -F STDOUTOFF /path/to/your/logfile.log -V DEBUG`.
