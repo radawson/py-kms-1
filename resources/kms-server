@@ -9,7 +9,7 @@ start()	{
 	. /etc/profile
 	HOST_IP=$(ip a s br-lan | grep -oE "\b([0-9]{1,3}\.){3}[0-9]{1,3}/24\b")
 	HOST_IP=${HOST_IP%???}
-	python /root/py-kms-1/py-kms/pykms_Server.py $HOST_IP 1688 >> /root/py-kms-1/kms.log &
+	python3 /root/py-kms-1/py-kms/pykms_Server.py $HOST_IP 1688 >> /root/py-kms-1/kms.log &
 	echo "Python KMS server started on "$HOST_IP":1688"
 }
 
