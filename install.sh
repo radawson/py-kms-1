@@ -5,9 +5,9 @@
 setup_ubuntu(){
 sudo cp ./resources/kms-server-ubuntu /lib/systemd/system/kms-server.service
 sudo systemctl daemon-reload
-sudo systemctl enable test-py.service
+sudo systemctl enable kms-server.service
 printf "$message"
-sudo systemctl start test-py.service
+sudo systemctl start kms-server.service
 }
 
 setup_openwrt(){
