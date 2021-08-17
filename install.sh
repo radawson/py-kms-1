@@ -15,7 +15,7 @@ cp ./resources/kms-server-owrt /etc/init.d/kms-server
 chmod 755 /etc/init.d/kms-server
 /etc/init.d/kms-server enable
 message+="py-kms will autodetect the LAN bridge IP address on reboot or restart"
-message+="If you change the IP in the GUI, you must still manually restart\nthe>
+message+="If you change the IP in the GUI, you must still manually restart\n"
 message+="\nTo start the server manually, type '/etc/init.d/kms-server start'"
 message+="\nTo stop the server, type '/etc/init.d/kms-server stop'"
 printf "$message"
