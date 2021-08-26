@@ -1,6 +1,7 @@
 #!/bin/sh
 # Installs py-kms as a service on OpenWRT devices
 # Run as root
+message=""
 
 setup_ubuntu(){
 sudo cp ./resources/kms-server-ubuntu /lib/systemd/system/kms-server.service
