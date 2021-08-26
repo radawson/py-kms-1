@@ -20,7 +20,7 @@ setup_openwrt(){
 	message+="If you change the IP in the GUI, you must still manually restart\n"
 	message+="\nTo start the server manually, type '/etc/init.d/kms-server start'"
 	message+="\nTo stop the server, type '/etc/init.d/kms-server stop'"
-	printf "$message"
+	printf "${message}"
 	/etc/init.d/kms-server start
 }
 
