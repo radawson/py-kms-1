@@ -1,6 +1,9 @@
 #!/bin/sh
 # Installs py-kms as a service on OpenWRT devices
+# v 1.0.1
 # Run as root
+# (c) Richard Dawson 2020, 2021
+
 MESSAGE="\npy-kms installed as a process that starts on boot\n"
 
 setup_ubuntu(){
