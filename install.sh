@@ -18,10 +18,10 @@ setup_openwrt(){
   cp ./resources/kms-server-owrt /etc/init.d/kms-server
   chmod 755 /etc/init.d/kms-server
   /etc/init.d/kms-server enable
-  MESSAGE="${MESSAGE}""py-kms will autodetect the LAN bridge IP address on reboot or restart"
+  MESSAGE="${MESSAGE}""py-kms will autodetect the LAN bridge IP address on reboot or restart\n"
   MESSAGE="${MESSAGE}""If you change the IP in the GUI, you must still manually restart\n"
-  MESSAGE="${MESSAGE}""\nTo start the server manually, type '/etc/init.d/kms-server start'"
-  MESSAGE="${MESSAGE}""\nTo stop the server, type '/etc/init.d/kms-server stop'"
+  MESSAGE="${MESSAGE}""\nTo start the server manually, type '/etc/init.d/kms-server start'\n"
+  MESSAGE="${MESSAGE}""\nTo stop the server, type '/etc/init.d/kms-server stop'\n"
   printf "${MESSAGE}"
   /etc/init.d/kms-server start
 }
