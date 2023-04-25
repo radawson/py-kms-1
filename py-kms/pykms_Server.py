@@ -525,7 +525,7 @@ class ServerWithoutGui(object):
                 import queue as Queue
                 daemon_queue = Queue.Queue(maxsize = 0)
                 daemon_serverthread = server_thread(daemon_queue, name = "Thread-Srv-Daemon")
-                daemon_serverthread.setDaemon(True)
+                daemon_serverthread.daemon = True
                 # options already checked in `server_main_terminal`.
                 daemon_serverthread.checked = True
                 daemon_serverthread.start()
@@ -632,7 +632,7 @@ class kmsServerHandler(socketserver.BaseRequestHandler):
 
 serverqueue = Queue.Queue(maxsize = 0)
 serverthread = server_thread(serverqueue, name = "Thread-Srv")
-serverthread.setDaemon(True)
+serverthread.daemon = True
 serverthread.start()
 
 if __name__ == "__main__":
