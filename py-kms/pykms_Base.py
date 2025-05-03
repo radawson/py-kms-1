@@ -123,15 +123,14 @@ class kmsBase:
                         from pytz.exceptions import UnknownTimeZoneError
                         try:
                                 tz = get_localzone()
-                                local_dt = tz.localize(requestDatetime)
+                                local_dt = requestDatetime.astimezone(tz)
                         except UnknownTimeZoneError:
                                 pretty_printer(log_obj = loggersrv.warning,
                                                put_text = "{reverse}{yellow}{bold}Unknown time zone ! Request time not localized.{end}")
+                        except ImportError:
+                                pretty_printer(log_obj = loggersrv.warning,
+                                               put_text = "{reverse}{yellow}{bold}Module 'tzlocal' not available ! Request time not localized.{end}")
                                 local_dt = requestDatetime
-                except ImportError:
-                        pretty_printer(log_obj = loggersrv.warning,
-                                       put_text = "{reverse}{yellow}{bold}Module 'tzlocal' not available ! Request time not localized.{end}")
-                        local_dt = requestDatetime
                 # *** Add generic exception handler to catch any localization errors ***
                 except Exception as e:
                         loggersrv.error("Error during timezone localization: %s", str(e), exc_info=True)
@@ -231,33 +230,39 @@ could be detected as not genuine !{end}" %currentClientCount)
                 return self.createKmsResponse(kmsRequest, currentClientCount, appName)
 
         def createKmsResponse(self, kmsRequest, currentClientCount, appName):
-                response = self.kmsResponseStruct()
-                response['versionMinor'] = kmsRequest['versionMinor']
-                response['versionMajor'] = kmsRequest['versionMajor']
-                
-                if not self.srv_config["epid"]:
-                        response["kmsEpid"] = epidGenerator(kmsRequest['kmsCountedId'].get(), kmsRequest['versionMajor'],
-                                                            self.srv_config["lcid"]).encode('utf-16le')
-                else:
-                        response["kmsEpid"] = self.srv_config["epid"].encode('utf-16le')
-
-                response['clientMachineId'] = kmsRequest['clientMachineId']
-                # rule: timeserver - 4h <= timeclient <= timeserver + 4h, check if is satisfied (TODO).
-                response['responseTime'] = kmsRequest['requestTime']
-                response['currentClientCount'] = currentClientCount
-                response['vLActivationInterval'] = self.srv_config["activation"]
-                response['vLRenewalInterval'] = self.srv_config["renewal"]
-
-                # Update database epid.
-                if self.srv_config['sqlite']:
-                        sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appName)
-
-                loggersrv.info("Server ePID: %s" % response["kmsEpid"].decode('utf-16le'))
-
-                # *** Log the fully populated response structure before returning ***
-                loggersrv.debug("Populated kmsResponseStruct before returning:\n%s", response.dump(print_to_stdout=False))
+                # *** Wrap in try/except to catch errors during response creation ***
+                try:
+                        response = self.kmsResponseStruct()
+                        response['versionMinor'] = kmsRequest['versionMinor']
+                        response['versionMajor'] = kmsRequest['versionMajor']
                         
-                return response
+                        if not self.srv_config.get("epid"): # Use .get() for safer access
+                                response["kmsEpid"] = epidGenerator(kmsRequest['kmsCountedId'].get(), kmsRequest['versionMajor'],
+                                                                    self.srv_config.get("lcid", 1033)).encode('utf-16le') # Provide default LCID
+                        else:
+                                response["kmsEpid"] = self.srv_config["epid"].encode('utf-16le')
+
+                        response['clientMachineId'] = kmsRequest['clientMachineId']
+                        # rule: timeserver - 4h <= timeclient <= timeserver + 4h, check if is satisfied (TODO).
+                        response['responseTime'] = kmsRequest['requestTime']
+                        response['currentClientCount'] = currentClientCount
+                        response['vLActivationInterval'] = self.srv_config.get("activation", 120) # Use .get() and provide defaults
+                        response['vLRenewalInterval'] = self.srv_config.get("renewal", 10080)
+
+                        # Update database epid.
+                        if self.srv_config.get('sqlite'):
+                                sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appName)
+
+                        loggersrv.info("Server ePID: %s" % response["kmsEpid"].decode('utf-16le'))
+
+                        # *** Log the fully populated response structure before returning ***
+                        loggersrv.debug("Populated kmsResponseStruct before returning:\n%s", response.dump(print_to_stdout=False))
+                                
+                        return response
+                except Exception as e:
+                        loggersrv.error("Error during createKmsResponse: %s", str(e), exc_info=True)
+                        # Optionally return None or raise a specific exception to indicate failure
+                        return None # Indicate failure to the caller
 
 
 import pykms_RequestV4, pykms_RequestV5, pykms_RequestV6, pykms_RequestUnknown
