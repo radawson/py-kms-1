@@ -228,17 +228,38 @@ def logger_create(log_obj, config, mode = 'a'):
                 log_obj.handlers = []
 
         for log_handler in log_handlers:
-                log_handler.setLevel(config['loglevel'])
-                if log_handler.name in ['LogStdout']:
-                        log_handler = apply_formatter(levelnum, (frmt_std, frmt_min), log_handler, color = True)
-                elif log_handler.name in ['LogRotate']:
-                        log_handler = apply_formatter(levelnum, (frmt_gen, frmt_min), log_handler)
-                # Attach.
+                # Original level setting:
+                # log_handler.setLevel(config['loglevel'])
+
+                # *** Force console handler level to DEBUG for testing ***
+                if log_handler.name == 'LogStdout':
+                     log_handler.setLevel(logging.DEBUG)
+                     # *** Use a standard formatter for console debugging ***
+                     standard_formatter = logging.Formatter(
+                          '%(asctime)s %(levelname)-8s [%(name)s] %(message)s',
+                          datefmt='%H:%M:%S'
+                     )
+                     log_handler.setFormatter(standard_formatter)
+                else:
+                     # Keep original level setting for other handlers (e.g., file)
+                     log_handler.setLevel(config['loglevel'])
+                     # Apply custom formatter only to non-console handlers for now
+                     if log_handler.name in ['LogRotate']:
+                         log_handler = apply_formatter(levelnum, (frmt_gen, frmt_min), log_handler)
+
+                # *** Remove application of custom formatter for LogStdout during this test ***
+                # if log_handler.name in ['LogStdout']:
+                #        log_handler = apply_formatter(levelnum, (frmt_std, frmt_min), log_handler, color = True)
+                # elif log_handler.name in ['LogRotate']:
+                #        log_handler = apply_formatter(levelnum, (frmt_gen, frmt_min), log_handler)
+
+                # Attach handler (original logic)
                 if config['asyncmsg']:
                         log_obj.addHandler(MultiProcessingLogHandler('Thread-AsyncMsg{0}'.format(log_handler.name), handler = log_handler))
                 else:
                         log_obj.addHandler(log_handler)
 
+        # Set logger level (original logic - should be DEBUG if -V DEBUG is used)
         log_obj.setLevel(config['loglevel'])
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
