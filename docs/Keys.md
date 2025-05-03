@@ -5,6 +5,22 @@ sometimes even reject it by itself (often due too many uses - in that case try t
 ## Windows
 ***
 
+### Windows Server 2025
+
+| Product | GVLK |
+| --- | --- |
+| Windows Server 2025 Datacenter | `D764K-2NDRG-47T6Q-P8T8W-YP6DF` |
+| Windows Server 2025 Standard | `TVRH6-WHNXV-R9WG3-9XRFY-MY832` |
+| Windows Server 2025 Datacenter: Azure Edition | `XGN3F-F394H-FD2MY-PP6FD-8MCRC` |
+
+### Windows Server 2022
+
+| Product | GVLK |
+| --- | --- |
+| Windows Server 2022 Datacenter | `WX4NM-KYWYW-QJJR4-XV3QB-6VM33` |
+| Windows Server 2022 Standard | `VDYBN-27WPP-V4HQT-9VMD4-VMK7H` |
+| Windows Server 2022 Datacenter: Azure Edition | `NTBV8-9K7Q8-V27C6-M2BTV-KHMXV` |
+
 ### Windows Server 2019
 
 | Product | GVLK |
@@ -32,6 +48,23 @@ sometimes even reject it by itself (often due too many uses - in that case try t
 | Windows Server 2016 Cloud Storage | `QN4C6-GBJD2-FB422-GHWJK-GJG2R` |
 | Windows Server 2016 Azure Core | `VP34G-4NPPG-79JTQ-864T4-R3MQX`<br>`WNCYY-GFBH2-M4WTT-XQ2FP-PG2K9` |
 
+### Windows 11/10 LTSC and IoT
+
+| Product | GVLK |
+| --- | --- |
+| Windows 11 Enterprise LTSC 2024 | `M7XTQ-FN8P6-TTKYV-9D4CC-J462D` |
+| Windows 11 Enterprise N LTSC 2024 | `92NFX-8DJQP-P6BBQ-THF9C-7CG2H` |
+| Windows 10 Enterprise LTSC 2021 | `M7XTQ-FN8P6-TTKYV-9D4CC-J462D` |
+| Windows 10 Enterprise N LTSC 2021 | `92NFX-8DJQP-P6BBQ-THF9C-7CG2H` |
+| Windows 10 Enterprise LTSC 2019 | `M7XTQ-FN8P6-TTKYV-9D4CC-J462D` |
+| Windows 10 Enterprise N LTSC 2019 | `92NFX-8DJQP-P6BBQ-THF9C-7CG2H` |
+| Windows 10 Enterprise LTSB 2016 | `DCPHK-NFMTC-H88MJ-PFHPY-QJ4BJ` |
+| Windows 10 Enterprise N LTSB 2016 | `QFFDN-GRT3P-VKWWX-X7T3R-8B639` |
+| Windows 10 Enterprise LTSB 2015 | `WNMTR-4C88C-JK8YV-HQ7T2-76DF9` |
+| Windows 10 Enterprise N LTSB 2015 | `2F77B-TNFGY-69QQF-B8YKP-D69TJ` |
+| Windows IoT Enterprise LTSC 2024 | `KBN8V-HFGQ4-MGXVD-347P6-PDQGT` |
+| Windows IoT Enterprise LTSC 2021 | `KBN8V-HFGQ4-MGXVD-347P6-PDQGT` |
+
 ### Windows 10
 
 | Product | GVLK |
@@ -40,8 +73,6 @@ sometimes even reject it by itself (often due too many uses - in that case try t
 | Windows 10 Professional Workstation N | `9FNHH-K3HBT-3W4TD-6383H-6XYWF` |
 | Windows 10 Enterprise G | `YYVX9-NTFWV-6MDM3-9PT4T-4M68B` |
 | Windows 10 Enterprise G N | `44RPN-FTY23-9VTTB-MP9BX-T84FV` |
-| Windows 10 Enterprise LTSC 2019 | `M7XTQ-FN8P6-TTKYV-9D4CC-J462D` |
-| Windows 10 Enterprise LTSC 2019 N | `92NFX-8DJQP-P6BBQ-THF9C-7CG2H` |
 | Windows 10 Remote Server | `7NBT4-WGBQX-MP4H7-QXFF8-YP3KX` |
 | Windows 10 Enterprise for Remote Sessions | `CPWHC-NT2C7-VYW78-DHDB2-PG3GK` |
 | Windows 10 S (Lean) | `NBTWJ-3DR69-3C4V8-C26MC-GQ9M6` |
