@@ -132,6 +132,12 @@ class kmsBase:
                         pretty_printer(log_obj = loggersrv.warning,
                                        put_text = "{reverse}{yellow}{bold}Module 'tzlocal' not available ! Request time not localized.{end}")
                         local_dt = requestDatetime
+                # *** Add generic exception handler to catch any localization errors ***
+                except Exception as e:
+                        loggersrv.error("Error during timezone localization: %s", str(e), exc_info=True)
+                        pretty_printer(log_obj = loggersrv.error, 
+                                       put_text = "{reverse}{red}{bold}Timezone localization failed unexpectedly! Using UTC time.{end}")
+                        local_dt = requestDatetime # Fallback to original UTC time
 
                 # Activation threshold.
                 # https://docs.microsoft.com/en-us/windows/deployment/volume-activation/activate-windows-10-clients-vamt                
