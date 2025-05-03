@@ -158,6 +158,10 @@ could be detected as not genuine !{end}" %currentClientCount)
                         # fixed to 10 (product server) or 50 (product desktop)
                         currentClientCount = RequiredClients     
 
+                        # *** Log calculated client count ***
+                        loggersrv.debug("Calculated currentClientCount: %d (Required: %d, Configured: %s)", 
+                                        currentClientCount, MinClients, str(self.srv_config.get("clientcount", "Default")))
+
                         
                 # Get a name for SkuId, AppId.        
                 kmsdb = kmsDB2Dict()
@@ -186,6 +190,9 @@ could be detected as not genuine !{end}" %currentClientCount)
                                 pretty_printer(log_obj = loggersrv.warning,
                                                put_text = "{reverse}{yellow}{bold}Can't find a name for this application group !{end}")
 
+                # *** Log product name lookup results ***
+                loggersrv.debug("Product Name Lookup: AppName='%s', SkuName='%s'", appName, skuName)
+
                 infoDict = {
                         "machineName" : kmsRequest.getMachineName(),
                         "clientMachineId" : str(clientMachineId),
@@ -212,6 +219,9 @@ could be detected as not genuine !{end}" %currentClientCount)
                         sql_initialize(self.srv_config['sqlite'])
                         sql_update(self.srv_config['sqlite'], infoDict)
 
+                # *** Log before calling createKmsResponse ***
+                loggersrv.debug("Calling createKmsResponse with currentClientCount: %d", currentClientCount)
+
                 return self.createKmsResponse(kmsRequest, currentClientCount, appName)
 
         def createKmsResponse(self, kmsRequest, currentClientCount, appName):
@@ -237,6 +247,9 @@ could be detected as not genuine !{end}" %currentClientCount)
                         sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appName)
 
                 loggersrv.info("Server ePID: %s" % response["kmsEpid"].decode('utf-16le'))
+
+                # *** Log the fully populated response structure before returning ***
+                loggersrv.debug("Populated kmsResponseStruct before returning:\n%s", response.dump(print_to_stdout=False))
                         
                 return response
 
