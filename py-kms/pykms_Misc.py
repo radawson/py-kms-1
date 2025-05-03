@@ -77,13 +77,27 @@ class LevelFormatter(logging.Formatter):
                 elif loglevel == logging.INFO:
                         frmt = '{cyan}' + formats[loglevel] + '{end}'
                 elif loglevel == logging.DEBUG:
+                        # Explicitly handle DEBUG level
                         frmt = '{green}' + formats[loglevel] + '{end}'
                 else:
+                        # Keep default fallback for any other levels
                         frmt = '{end}' + formats[loglevel] + '{end}'
                 return frmt
 
         def format(self, record):
+                # Ensure the correct formatter is fetched, including DEBUG if handled
                 formatter = self.formatters.get(record.levelno, self.default_fmt)
+                # Add fallback for DEBUG level if somehow not in formatters, though colorize should handle it.
+                if record.levelno == logging.DEBUG and record.levelno not in self.formatters:
+                     # Use a default debug format if needed (e.g., same as INFO/GEN)
+                     # This part might be redundant if the __init__ loop correctly adds it
+                     # based on the updated colorize logic implicitly affecting the formats dict,
+                     # but adding belt-and-suspenders logic here.
+                     # Let's assume formats[0] is the standard format used for INFO/DEBUG etc.
+                     if logging.DEBUG not in self.formatters and 0 in formats:
+                          self.formatters[logging.DEBUG] = logging.Formatter(self.colorize({logging.DEBUG: formats[0]}, logging.DEBUG).format(**ColorExtraMap), datefmt=self.dfmt)
+                          formatter = self.formatters[logging.DEBUG]
+
                 return formatter.format(record)
 
 # based on https://github.com/jruere/multiprocessing-logging (license LGPL-3.0)
@@ -205,6 +219,7 @@ def logger_create(log_obj, config, mode = 'a'):
                                 levelformdict[num] = formats[0]
                         else:
                                 levelformdict[num] = formats[1]
+                # Ensure the formatter uses the potentially colored format string
                 handler.setFormatter(LevelFormatter(levelformdict, color = color))
                 return handler
 

@@ -6,10 +6,9 @@ After=network.target
 Type=simple
 User=pykms # Run as dedicated user
 Group=pykms # Run as dedicated group
-WorkingDirectory=/opt/py-kms # Set working directory to app root
-ExecStart=/usr/bin/python3 /opt/py-kms/pykms_Server.py # Use placeholder install path
-Restart=on-failure # Restart if it fails
-# StandardInput=tty-force # Removed
+WorkingDirectory=/opt/py-kms  # Set to your project root
+ExecStart=/opt/py-kms/venv/bin/python3 /opt/py-kms/pykms_Server.py -wg --web-port 8080 # Add args here if needed
+Restart=on-failure
 
 [Install]
 WantedBy=multi-user.target
