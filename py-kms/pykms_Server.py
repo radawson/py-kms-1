@@ -279,11 +279,6 @@ The default is "364F463A8863D35F" or type "RANDOM" to auto generate the HWID.',
         "def": None,
         "des": "timeoutsndrcv",
     },
-    "asyncmsg": {
-        "help": "Prints pretty / logging messages asynchronously. Deactivated by default.",
-        "def": False,
-        "des": "asyncmsg",
-    },
     "llevel": {
         "help": 'Use this option to set a log level. The default is "ERROR".',
         "def": "ERROR",
@@ -460,14 +455,6 @@ def server_options():
         default=srv_options["time1"]["def"],
         help=srv_options["time1"]["help"],
         type=str,
-    )
-    server_parser.add_argument(
-        "-y",
-        "--async-msg",
-        action="store_true",
-        dest=srv_options["asyncmsg"]["des"],
-        default=srv_options["asyncmsg"]["def"],
-        help=srv_options["asyncmsg"]["help"],
     )
     server_parser.add_argument(
         "-V",

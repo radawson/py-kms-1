@@ -100,166 +100,114 @@ class LevelFormatter(logging.Formatter):
 
                 return formatter.format(record)
 
+# Remove MultiProcessingLogHandler class entirely
 # based on https://github.com/jruere/multiprocessing-logging (license LGPL-3.0)
-from multiprocessing import Queue as MPQueue
-import queue as Queue
-import threading
-
-class MultiProcessingLogHandler(logging.Handler):
-        def __init__(self, name, handler = None):
-                super(MultiProcessingLogHandler, self).__init__()
-                self.queue = MPQueue(-1)
-                if handler is None:
-                        handler = logging.StreamHandler()
-                self.handler = handler
-                self.name = handler.name
-
-                self.setLevel(self.handler.level)
-                self.setFormatter(self.handler.formatter)
-                self.filters = self.handler.filters
-
-                self.is_closed = False
-                self.receive_thread = threading.Thread(target = self.receive, name = name)
-                self.receive_thread.daemon = True
-                self.receive_thread.start()
-
-        def setFormatter(self, fmt):
-                super(MultiProcessingLogHandler, self).setFormatter(fmt)
-                self.handler.setFormatter(fmt)
-
-        def emit(self, record):
-                try:
-                        if record.args:
-                                record.msg = record.msg %record.args
-                                record.args = None
-                        if record.exc_info:
-                                dummy = self.format(record)
-                                record.exc_info = None
-                        self.queue.put_nowait(record)
-                except (KeyboardInterrupt, SystemExit):
-                        raise
-                except:
-                        self.handleError(record)
-
-        def receive(self):
-                while not (self.is_closed and self.queue.empty()):
-                        try:
-                                record = self.queue.get(timeout = 0.2)
-                                self.handler.emit(record)
-                        except (KeyboardInterrupt, SystemExit):
-                                raise
-                        except EOFError:
-                                break
-                        except Queue.Empty:
-                                pass
-                        except:
-                                logging.exception('Error in log handler.')
-                self.queue.close()
-                self.queue.join_thread()
-
-        def close(self):
-                if not self.is_closed:
-                        self.is_closed = True
-                        self.receive_thread.join(5.0)
-                        self.handler.close()
-                        super(MultiProcessingLogHandler, self).close()
+# from multiprocessing import Queue as MPQueue
+# import queue as Queue
+# import threading
+#
+# class MultiProcessingLogHandler(logging.Handler):
+#    # ... (class definition removed) ...
 
 
 def logger_create(log_obj, config, mode = 'a'):
         # Create new level.
         num_lvl_mininfo = 25
         add_logging_level('MININFO', num_lvl_mininfo)
-        log_handlers = []
 
-        # Configure visualization.
-        if any(opt in ['STDOUT', 'FILESTDOUT', 'STDOUTOFF'] for opt in config['logfile']):
-                if any(opt in ['STDOUT', 'FILESTDOUT'] for opt in config['logfile']):
-                        # STDOUT or FILESTDOUT.
-                        hand_stdout = logging.StreamHandler(sys.stdout)
-                        hand_stdout.name = 'LogStdout'
-                        log_handlers.append(hand_stdout)
-                if any(opt in ['STDOUTOFF', 'FILESTDOUT'] for opt in config['logfile']):
-                        # STDOUTOFF or FILESTDOUT.
-                        hand_rotate = RotatingFileHandler(filename = config['logfile'][1], mode = mode, maxBytes = int(config['logsize'] * 1024 * 512),
-                                                          backupCount = 1, encoding = None, delay = 0)
-                        hand_rotate.name = 'LogRotate'
-                        log_handlers.append(hand_rotate)
-        elif 'FILEOFF' in config['logfile']:
-                hand_null = logging.FileHandler(os.devnull)
-                hand_null.name = 'LogNull'
-                log_handlers.append(hand_null)
+        # Determine desired handlers based on config['logfile']
+        log_to_file = False
+        log_to_console = True  # Default to console logging
+        log_filename = None
+
+        if isinstance(config['logfile'], list):
+             # Handle cases like ['FILESTDOUT', 'path/to/file.log'] or ['STDOUTOFF', 'path/to/file.log']
+             log_mode = config['logfile'][0]
+             if len(config['logfile']) > 1:
+                  log_filename = config['logfile'][1]
+             if log_mode == 'FILESTDOUT':
+                  log_to_file = True
+                  log_to_console = True
+             elif log_mode == 'STDOUTOFF':
+                  log_to_file = True
+                  log_to_console = False
+             # Implicitly handle ['STDOUT'] from list conversion below
+        elif isinstance(config['logfile'], str):
+            log_mode = config['logfile']
+            if log_mode == 'STDOUT':
+                 log_to_console = True
+                 log_to_file = False
+            elif log_mode == 'FILEOFF':
+                 log_to_console = False
+                 log_to_file = False # Add NullHandler later
+            else: # Default case (FILE)
+                 log_to_file = True
+                 log_to_console = True # Usually want console for file mode too
+                 log_filename = log_mode
         else:
-                # FILE.
-                hand_rotate = RotatingFileHandler(filename = config['logfile'][0], mode = mode, maxBytes = int(config['logsize'] * 1024 * 512),
-                                                  backupCount = 1, encoding = None, delay = 0)
-                hand_rotate.name = 'LogRotate'
-                log_handlers.append(hand_rotate)
+             # Fallback / error? Assume default: log to console and default file
+             log_to_file = True
+             log_to_console = True
+             log_filename = os.path.join(".", "pykms_logserver.log") # Use a default name
 
-        # Configure formattation.
+        # Configure formatters
         try:
                 levelnames = logging._levelToName
         except AttributeError:
                 levelnames = logging._levelNames
         levelnum = [k for k in levelnames if k != 0]
 
-        frmt_gen = '%(asctime)s %(levelname)-8s %(message)s'
-        frmt_std = '%(asctime)s %(levelname)-8s %(message)s'
+        # Define standard and minimal formats
+        frmt_gen = '%(asctime)s %(levelname)-8s %(message)s' # Format for file
+        frmt_std = '%(asctime)s %(levelname)-8s [%(name)s] %(message)s' # Format for console
         frmt_min = '%(asctime)s %(levelname)-8s %(host)s   %(status)s   %(product)s  %(message)s'
-        frmt_name = '%(name)s '
 
+        # Gui adjustments (keep for now, maybe remove later if GUI is fully separate)
         from pykms_Server import serverthread
         if serverthread.with_gui:
-                frmt_std = frmt_name + frmt_std
-                frmt_min = frmt_name + frmt_min
+                frmt_std = '%(name)s ' + frmt_std
+                frmt_min = '%(name)s ' + frmt_min
 
-        def apply_formatter(levelnum, formats, handler, color = False):
-                levelformdict = {}
-                for num in levelnum:
-                        if num != num_lvl_mininfo:
-                                levelformdict[num] = formats[0]
-                        else:
-                                levelformdict[num] = formats[1]
-                # Ensure the formatter uses the potentially colored format string
-                handler.setFormatter(LevelFormatter(levelformdict, color = color))
-                return handler
+        # Setup formatters
+        file_formats = {num: frmt_gen if num != num_lvl_mininfo else frmt_min for num in levelnum}
+        console_formats = {num: frmt_std if num != num_lvl_mininfo else frmt_min for num in levelnum}
 
-        # Clear old handlers.
+        file_formatter = LevelFormatter(file_formats, color=False)
+        console_formatter = LevelFormatter(console_formats, color=True)
+
+        # Clear old handlers before adding new ones
         if log_obj.handlers:
                 log_obj.handlers = []
 
-        for log_handler in log_handlers:
-                # Original level setting:
-                # log_handler.setLevel(config['loglevel'])
+        # Create and add handlers
+        if log_to_file and log_filename:
+            try:
+                # Ensure directory exists if specified in log_filename
+                log_dir = os.path.dirname(log_filename)
+                if log_dir and not os.path.exists(log_dir):
+                    os.makedirs(log_dir)
+                # Create file handler
+                file_handler = RotatingFileHandler(filename=log_filename, mode=mode,
+                                                   maxBytes=int(config['logsize'] * 1024 * 512) if config['logsize'] else 0,
+                                                   backupCount=1, encoding=None, delay=0)
+                file_handler.setLevel(config['loglevel'])
+                file_handler.setFormatter(file_formatter)
+                log_obj.addHandler(file_handler)
+            except Exception as e:
+                 print(f"Error setting up file logging for {log_filename}: {e}", file=sys.stderr)
+                 log_to_console = True # Force console logging if file logging fails
 
-                # *** Force console handler level to DEBUG for testing ***
-                if log_handler.name == 'LogStdout':
-                     log_handler.setLevel(logging.DEBUG)
-                     # *** Use a standard formatter for console debugging ***
-                     standard_formatter = logging.Formatter(
-                          '%(asctime)s %(levelname)-8s [%(name)s] %(message)s',
-                          datefmt='%H:%M:%S'
-                     )
-                     log_handler.setFormatter(standard_formatter)
-                else:
-                     # Keep original level setting for other handlers (e.g., file)
-                     log_handler.setLevel(config['loglevel'])
-                     # Apply custom formatter only to non-console handlers for now
-                     if log_handler.name in ['LogRotate']:
-                         log_handler = apply_formatter(levelnum, (frmt_gen, frmt_min), log_handler)
+        if log_to_console:
+            console_handler = logging.StreamHandler(sys.stdout)
+            console_handler.setLevel(config['loglevel']) # Set level correctly
+            console_handler.setFormatter(console_formatter)
+            log_obj.addHandler(console_handler)
 
-                # *** Remove application of custom formatter for LogStdout during this test ***
-                # if log_handler.name in ['LogStdout']:
-                #        log_handler = apply_formatter(levelnum, (frmt_std, frmt_min), log_handler, color = True)
-                # elif log_handler.name in ['LogRotate']:
-                #        log_handler = apply_formatter(levelnum, (frmt_gen, frmt_min), log_handler)
+        if not log_to_file and not log_to_console:
+            # Add NullHandler if both file and console are off (FILEOFF)
+            log_obj.addHandler(logging.NullHandler())
 
-                # Attach handler (original logic)
-                if config['asyncmsg']:
-                        log_obj.addHandler(MultiProcessingLogHandler('Thread-AsyncMsg{0}'.format(log_handler.name), handler = log_handler))
-                else:
-                        log_obj.addHandler(log_handler)
-
-        # Set logger level (original logic - should be DEBUG if -V DEBUG is used)
+        # Set the main logger level
         log_obj.setLevel(config['loglevel'])
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------

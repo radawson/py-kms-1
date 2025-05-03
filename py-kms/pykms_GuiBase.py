@@ -136,7 +136,7 @@ class KmsGui(tk.Tk):
                                 self.clt_on_show(force_view = True)
                         self.optsrvwin.grid_remove()
                         self.msgsrvwin.grid_remove()
-                        gui_redirector('stderr', redirect_to = TextRedirect.Stderr, stderr_side = "clt")
+                        gui_redirector('stderr', redirect_to = TextRedirect.Stderr)
                 else:
                         menu.entryconfigure(1, label = 'Enable client-side mode')
                         self.optsrvwin.grid()
@@ -368,12 +368,6 @@ class KmsGui(tk.Tk):
                                         validate = "key", validatecommand = self.validation_float)
                 self.srvsize.insert('end', srv_options['lsize']['def'])
                 ToolTip(self.srvsize, text = srv_options['lsize']['help'], wraplength = self.wraplength)
-                # Asynchronous messages.
-                self.chkvalsrvasy = tk.BooleanVar()
-                self.chkvalsrvasy.set(srv_options['asyncmsg']['def'])
-                chksrvasy = tk.Checkbutton(self.pagewidgets["Srv"]["PageWin"]["PageStart"], text = 'Async\nMsg',
-                                           font = self.customfonts['opt'], var = self.chkvalsrvasy, relief = 'groove', name = 'asyncmsg')
-                ToolTip(chksrvasy, text = srv_options['asyncmsg']['help'], wraplength = self.wraplength)
 
                 # Listbox radiobuttons server.
                 self.chksrvfile = ListboxOfRadiobuttons(self.pagewidgets["Srv"]["PageWin"]["PageStart"],
@@ -408,7 +402,6 @@ class KmsGui(tk.Tk):
                 self.srvfile.grid(row = 10, column = 1, padx = 5, pady = 5, sticky = 'ew')
                 srvfilebtnwin.grid(row = 10, column = 2, padx = 5, pady = 5, sticky = 'ew')
                 self.chksrvfile.grid(row = 11, column = 1, padx = 5, pady = 5, sticky = 'ew')
-                chksrvasy.grid(row = 11, column = 2, padx = 5, pady = 5, sticky = 'ew')
                 srvlevellbl.grid(row = 12, column = 0, padx = 5, pady = 5, sticky = 'e')
                 self.srvlevel.grid(row = 12, column = 1, padx = 5, pady = 5, sticky = 'ew')
                 srvsizelbl.grid(row = 13, column = 0, padx = 5, pady = 5, sticky = 'e')
@@ -594,12 +587,6 @@ class KmsGui(tk.Tk):
                                         validate = "key", validatecommand = self.validation_float)
                 self.cltsize.insert('end', clt_options['lsize']['def'])
                 ToolTip(self.cltsize, text = clt_options['lsize']['help'], wraplength = self.wraplength)
-                # Asynchronous messages.
-                self.chkvalcltasy = tk.BooleanVar()
-                self.chkvalcltasy.set(clt_options['asyncmsg']['def'])
-                chkcltasy = tk.Checkbutton(self.pagewidgets["Clt"]["PageWin"]["PageStart"], text = 'Async\nMsg',
-                                           font = self.customfonts['opt'], var = self.chkvalcltasy, relief = 'groove', name = 'asyncmsg')
-                ToolTip(chkcltasy, text = clt_options['asyncmsg']['help'], wraplength = self.wraplength)
 
                 # Listbox radiobuttons client.
                 self.chkcltfile = ListboxOfRadiobuttons(self.pagewidgets["Clt"]["PageWin"]["PageStart"],
@@ -627,16 +614,10 @@ class KmsGui(tk.Tk):
                 self.cltfile.grid(row = 6, column = 1, padx = 5, pady = 5, sticky = 'ew')
                 cltfilebtnwin.grid(row = 6, column = 2, padx = 5, pady = 5, sticky = 'ew')
                 self.chkcltfile.grid(row = 7, column = 1, padx = 5, pady = 5, sticky = 'ew')
-                chkcltasy.grid(row = 7, column = 2, padx = 5, pady = 5, sticky = 'ew')
                 cltlevellbl.grid(row = 8, column = 0, padx = 5, pady = 5, sticky = 'e')
                 self.cltlevel.grid(row = 8, column = 1, padx = 5, pady = 5, sticky = 'ew')
                 cltsizelbl.grid(row = 9, column = 0, padx = 5, pady = 5, sticky = 'e')
                 self.cltsize.grid(row = 9, column = 1, padx = 5, pady = 5, sticky = 'ew')
-
-                # ugly fix when client-side mode is activated.
-                templbl = tk.Label(self.pagewidgets["Clt"]["PageWin"]["PageStart"],
-                                   bg = self.customcolors['lavender']).grid(row = 10, column = 0,
-                                                                            padx = 35, pady = 54, sticky = 'e')
 
                 ## Create widgets (optcltwin:Clt:PageWin:PageEnd) -------------------------------------------------------------------------------------------
                 # Timeout connection.
@@ -750,7 +731,6 @@ class KmsGui(tk.Tk):
                 srv_config[srv_options['activation']['des']] = self.prep_option(self.activ.get())
                 srv_config[srv_options['renewal']['des']] = self.prep_option(self.renew.get())
                 srv_config[srv_options['lfile']['des']] = self.prep_logfile(self.srvfile.get(), self.chksrvfile.state())
-                srv_config[srv_options['asyncmsg']['des']] = self.chkvalsrvasy.get()
                 srv_config[srv_options['llevel']['des']] = self.srvlevel.get()
                 srv_config[srv_options['lsize']['des']] = self.prep_option(self.srvsize.get())
 
@@ -825,7 +805,6 @@ class KmsGui(tk.Tk):
                 clt_config[clt_options['cmid']['des']] = self.cltcmid.get()
                 clt_config[clt_options['name']['des']] = self.cltname.get()
                 clt_config[clt_options['lfile']['des']] = self.prep_logfile(self.cltfile.get(), self.chkcltfile.state())
-                clt_config[clt_options['asyncmsg']['des']] = self.chkvalcltasy.get()
                 clt_config[clt_options['llevel']['des']] = self.cltlevel.get()
                 clt_config[clt_options['lsize']['des']] = self.prep_option(self.cltsize.get())
 

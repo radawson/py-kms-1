@@ -63,8 +63,6 @@ will be generated.', 'def' : None, 'des' : "machine"},
                       'def' : None, 'des' : "timeoutidle"},
         'time1'    : {'help' : 'Set the maximum time to wait for sending / receiving a request / response. Default is no timeout.',
                       'def' : None, 'des' : "timeoutsndrcv"},
-        'asyncmsg' : {'help' : 'Prints pretty / logging messages asynchronously. Deactivated by default.',
-                      'def' : False, 'des' : "asyncmsg"},
         'llevel'   : {'help' : 'Use this option to set a log level. The default is \"ERROR\".', 'def' : "ERROR", 'des' : "loglevel",
                       'choi' : ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "MININFO"]},
         'lfile'    : {'help' : 'Use this option to set an output log file. The default is \"pykms_logclient.log\". \
@@ -90,8 +88,6 @@ def client_options():
                                    help = clt_options['time0']['help'], type = str)
         client_parser.add_argument("-t1", "--timeout-sndrcv", action = "store", dest = clt_options['time1']['des'], default = clt_options['time1']['def'],
                                    help = clt_options['time1']['help'], type = str)
-        client_parser.add_argument("-y", "--async-msg", action = "store_true", dest = clt_options['asyncmsg']['des'],
-                                   default = clt_options['asyncmsg']['def'], help = clt_options['asyncmsg']['help'])
         client_parser.add_argument("-V", "--loglevel", dest = clt_options['llevel']['des'], action = "store",
                                    choices = clt_options['llevel']['choi'], default = clt_options['llevel']['def'],
                                    help = clt_options['llevel']['help'], type = str)
