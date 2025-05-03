@@ -13,36 +13,100 @@ _py-kms_ is a port of node-kms created by [cyrozap](http://forums.mydigitallife.
 ## Features
 - Responds to `v4`, `v5`, and `v6` KMS requests.
 - Supports activating:
-	- Windows Vista 
-	- Windows 7 
-	- Windows 8
-	- Windows 8.1
-	- Windows 10 ( 1511 / 1607 / 1703 / 1709 / 1803 / 1809 )
+    - Windows Vista 
+    - Windows 7 
+    - Windows 8
+    - Windows 8.1
+    - Windows 10 ( 1511 / 1607 / 1703 / 1709 / 1803 / 1809 )
     - Windows 10 ( 1903 / 1909 / 20H1 )
-	- Windows Server 2008
-	- Windows Server 2008 R2
-	- Windows Server 2012
-	- Windows Server 2012 R2
-	- Windows Server 2016
-	- Windows Server 2019
-	- Microsoft Office 2010 ( Volume License )
-	- Microsoft Office 2013 ( Volume License )
-	- Microsoft Office 2016 ( Volume License )
-	- Microsoft Office 2019 ( Volume License )
-  - It's written in Python (tested with Python 3.6.9).
-  - Supports execution by `Docker`, `systemd`, `Upstart` and many more...
-  - Includes a GUI for simple managing.
-  - Uses `sqlite` for persistent data storage.
+    - Windows Server 2008
+    - Windows Server 2008 R2
+    - Windows Server 2012
+    - Windows Server 2012 R2
+    - Windows Server 2016
+    - Windows Server 2019
+    - Windows Server 2022
+    - Windows Server 2025
+    - Microsoft Office 2010 ( Volume License )
+    - Microsoft Office 2013 ( Volume License )
+    - Microsoft Office 2016 ( Volume License )
+    - Microsoft Office 2019 ( Volume License )
+    - Microsoft Office 2021 ( Volume License )
+    - Microsoft Office LTSC 2021 ( Volume License )
+    - Microsoft Office LTSC 2024 ( Volume License )
+- Written in Python (tested with Python 3.6.9+)
+- Supports execution by `Docker`, `systemd`, `Upstart` and many more...
+- Modern web-based GUI for easy management
+- Multiple database backend support:
+    - SQLite (default)
+    - MySQL/MariaDB
+    - PostgreSQL
+- Real-time logging and monitoring
+- Client activation tracking and statistics
 
 ## Documentation
-The wiki has been completly reworked and is now available on [readthedocs.com](https://py-kms.readthedocs.io/en/latest/). It should you provide all necessary information how to setup and to use _py-kms_ , all without clumping this readme. The documentation also houses more details about activation with _py-kms_ and how to get GVLK keys.
+The wiki has been completely reworked and is now available on [readthedocs.com](https://py-kms.readthedocs.io/en/latest/). It provides all necessary information on how to setup and use _py-kms_, without cluttering this readme. The documentation also houses more details about activation with _py-kms_ and how to get GVLK keys.
        
-## Quick start
-- To start the server, execute `python3 pykms_Server.py [IPADDRESS] [PORT]`, the default _IPADDRESS_ is `0.0.0.0` ( all interfaces ) and the default _PORT_ is `1688`. Note that both the address and port are optional. It's allowed to use IPv4 and IPv6 addresses. If you have a IPv6-capable dual-stack OS, a dual-stack socket is created when using a IPv6 address.
-- To start the server automatically using Docker, execute `docker run -d --name py-kms --restart always -p 1688:1688 pykmsorg/py-kms`.
-- To show the help pages type: `python3 pykms_Server.py -h` and `python3 pykms_Client.py -h`.
-- For launching _py-kms_ GUI make the file `pykms_Server.py` executable with `chmod +x /path/to/folder/py-kms/pykms_Server.py`, then simply run `pykms_Server.py` by double-clicking.
+## Quick Start
+
+### Basic Server
+To start the server with default settings:
+```bash
+python3 pykms_Server.py
+```
+This will start the server on all interfaces (0.0.0.0) on port 1688.
+
+### Web GUI
+To enable the web-based management interface:
+```bash
+python3 pykms_Server.py --web-gui --web-port 8080
+```
+Access the web interface at `http://localhost:8080`
+
+### Database Configuration
+The server supports multiple database backends:
+
+#### SQLite (Default)
+```bash
+python3 pykms_Server.py -s database.db
+```
+
+#### MySQL/MariaDB
+```bash
+python3 pykms_Server.py --db-type mysql --db-host localhost --db-name pykms --db-user user --db-password pass
+```
+
+#### PostgreSQL
+```bash
+python3 pykms_Server.py --db-type postgresql --db-host localhost --db-name pykms --db-user user --db-password pass
+```
+
+### Docker
+Start with default settings:
+```bash
+docker run -d --name py-kms --restart always -p 1688:1688 pykmsorg/py-kms
+```
+
+Start with web GUI and MySQL:
+```bash
+docker run -d --name py-kms \
+  -p 1688:1688 -p 8080:8080 \
+  -e WEB_GUI=true \
+  -e DB_TYPE=mysql \
+  -e DB_HOST=mysql-server \
+  -e DB_NAME=pykms \
+  -e DB_USER=user \
+  -e DB_PASSWORD=pass \
+  pykmsorg/py-kms
+```
+
+### Help
+For full command line options:
+```bash
+python3 pykms_Server.py -h
+python3 pykms_Client.py -h
+```
 
 ## License
-   - _py-kms_ is [![Unlicense](https://img.shields.io/badge/license-unlicense-lightgray.svg)](https://github.com/SystemRage/py-kms/blob/master/LICENSE)
-   - _py-kms GUI_ is [![MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/SystemRage/py-kms/blob/master/LICENSE.gui.md) © Matteo ℱan
+- _py-kms_ is [![Unlicense](https://img.shields.io/badge/license-unlicense-lightgray.svg)](https://github.com/SystemRage/py-kms/blob/master/LICENSE)
+- _py-kms GUI_ is [![MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/SystemRage/py-kms/blob/master/LICENSE.gui.md) © Matteo ℱan

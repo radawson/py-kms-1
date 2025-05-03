@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+
+import os
+import logging
+from datetime import datetime
+from sqlalchemy import create_engine, Column, Integer, String, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import SQLAlchemyError
+from pykms_Format import pretty_printer
+
+loggersrv = logging.getLogger('logsrv')
+Base = declarative_base()
+
+class Client(Base):
+    __tablename__ = 'clients'
+    
+    id = Column(Integer, primary_key=True)
+    clientMachineId = Column(String)
+    machineName = Column(String)
+    applicationId = Column(String)
+    skuId = Column(String)
+    licenseStatus = Column(String)
+    lastRequestTime = Column(DateTime)
+    kmsEpid = Column(String)
+    requestCount = Column(Integer, default=1)
+
+class DatabaseBackend:
+    def __init__(self, connection_string):
+        self.engine = create_engine(connection_string)
+        Base.metadata.create_all(self.engine)
+        Session = sessionmaker(bind=self.engine)
+        self.session = Session()
+
+    def update_client(self, info_dict):
+        try:
+            client = self.session.query(Client).filter_by(
+                clientMachineId=info_dict['clientMachineId'],
+                applicationId=info_dict['appId']
+            ).first()
+
+            if not client:
+                # Insert new client
+                client = Client(
+                    clientMachineId=info_dict['clientMachineId'],
+                    machineName=info_dict['machineName'],
+                    applicationId=info_dict['appId'],
+                    skuId=info_dict['skuId'],
+                    licenseStatus=info_dict['licenseStatus'],
+                    lastRequestTime=datetime.fromtimestamp(info_dict['requestTime']),
+                )
+                self.session.add(client)
+            else:
+                # Update existing client
+                client.machineName = info_dict['machineName']
+                client.applicationId = info_dict['appId']
+                client.skuId = info_dict['skuId']
+                client.licenseStatus = info_dict['licenseStatus']
+                client.lastRequestTime = datetime.fromtimestamp(info_dict['requestTime'])
+                client.requestCount += 1
+
+            self.session.commit()
+
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            pretty_printer(log_obj=loggersrv.error, to_exit=True,
+                         put_text="{reverse}{red}{bold}Database Error: %s. Exiting...{end}" % str(e))
+
+    def update_epid(self, kms_request, response, app_name):
+        try:
+            cmid = str(kms_request['clientMachineId'].get())
+            client = self.session.query(Client).filter_by(
+                clientMachineId=cmid,
+                applicationId=app_name
+            ).first()
+
+            if client:
+                client.kmsEpid = str(response["kmsEpid"].decode('utf-16le'))
+                self.session.commit()
+
+        except SQLAlchemyError as e:
+            self.session.rollback()
+            pretty_printer(log_obj=loggersrv.error, to_exit=True,
+                         put_text="{reverse}{red}{bold}Database Error: %s. Exiting...{end}" % str(e))
+
+    def get_all_clients(self):
+        try:
+            return self.session.query(Client).all()
+        except SQLAlchemyError as e:
+            pretty_printer(log_obj=loggersrv.error, to_exit=True,
+                         put_text="{reverse}{red}{bold}Database Error: %s. Exiting...{end}" % str(e))
+            return []
+
+def create_backend(config):
+    """Create database backend based on configuration"""
+    if config.get('db_type') == 'mysql':
+        connection_string = f"mysql+pymysql://{config['db_user']}:{config['db_password']}@{config['db_host']}/{config['db_name']}"
+    elif config.get('db_type') == 'postgresql':
+        connection_string = f"postgresql://{config['db_user']}:{config['db_password']}@{config['db_host']}/{config['db_name']}"
+    else:  # Default to SQLite
+        db_path = config.get('sqlite_path', 'pykms_database.db')
+        connection_string = f"sqlite:///{db_path}"
+
+    return DatabaseBackend(connection_string) 

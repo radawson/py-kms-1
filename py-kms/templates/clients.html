@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}Clients{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Client Management</h1>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-striped" id="clientsTable">
+                <thead>
+                    <tr>
+                        <th>Machine Name</th>
+                        <th>Machine ID</th>
+                        <th>Application</th>
+                        <th>SKU</th>
+                        <th>Status</th>
+                        <th>Last Request</th>
+                        <th>Request Count</th>
+                        <th>KMS ePID</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td>{{ client.machineName }}</td>
+                        <td>{{ client.clientMachineId }}</td>
+                        <td>{{ client.applicationId }}</td>
+                        <td>{{ client.skuId }}</td>
+                        <td>
+                            <span class="badge {% if client.licenseStatus == 'Licensed' %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ client.licenseStatus }}
+                            </span>
+                        </td>
+                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ client.requestCount }}</td>
+                        <td>{{ client.kmsEpid }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize DataTables for better table functionality
+    $('#clientsTable').DataTable({
+        order: [[5, 'desc']], // Sort by last request time by default
+        pageLength: 25,
+        columns: [
+            null, // Machine Name
+            null, // Machine ID
+            null, // Application
+            null, // SKU
+            null, // Status
+            { type: 'date' }, // Last Request
+            { type: 'num' }, // Request Count
+            null  // KMS ePID
+        ]
+    });
+});
+</script>
+
+<!-- Add DataTables CSS and JS -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/dataTables.bootstrap5.min.css">
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+<script type="text/javascript" src="https://cdn.datatables.net/1.10.24/js/dataTables.bootstrap5.min.js"></script>
+{% endblock %} 

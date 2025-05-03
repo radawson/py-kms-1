@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Configuration{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Configuration</h1>
+
+<div class="card">
+    <div class="card-body">
+        <form id="configForm" method="POST">
+            <div class="mb-3">
+                <label class="form-label">Database Type</label>
+                <select class="form-select" name="db_type" id="dbType">
+                    <option value="sqlite" {% if config.db_type == 'sqlite' %}selected{% endif %}>SQLite</option>
+                    <option value="mysql" {% if config.db_type == 'mysql' %}selected{% endif %}>MySQL</option>
+                    <option value="postgresql" {% if config.db_type == 'postgresql' %}selected{% endif %}>PostgreSQL</option>
+                </select>
+            </div>
+
+            <div id="sqliteConfig" class="database-config {% if config.db_type != 'sqlite' %}d-none{% endif %}">
+                <div class="mb-3">
+                    <label class="form-label">SQLite Database Path</label>
+                    <input type="text" class="form-control" name="sqlite_path" value="{{ config.sqlite_path }}">
+                </div>
+            </div>
+
+            <div id="dbConfig" class="database-config {% if config.db_type == 'sqlite' %}d-none{% endif %}">
+                <div class="mb-3">
+                    <label class="form-label">Database Host</label>
+                    <input type="text" class="form-control" name="db_host" value="{{ config.db_host }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Database Name</label>
+                    <input type="text" class="form-control" name="db_name" value="{{ config.db_name }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Database User</label>
+                    <input type="text" class="form-control" name="db_user" value="{{ config.db_user }}">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Database Password</label>
+                    <input type="password" class="form-control" name="db_password" value="{{ config.db_password }}">
+                </div>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Web Interface Port</label>
+                <input type="number" class="form-control" name="web_port" value="{{ config.web_port }}">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Configuration</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const dbType = document.getElementById('dbType');
+    const sqliteConfig = document.getElementById('sqliteConfig');
+    const dbConfig = document.getElementById('dbConfig');
+    const configForm = document.getElementById('configForm');
+
+    // Toggle database configuration sections based on selected type
+    dbType.addEventListener('change', function() {
+        if (this.value === 'sqlite') {
+            sqliteConfig.classList.remove('d-none');
+            dbConfig.classList.add('d-none');
+        } else {
+            sqliteConfig.classList.add('d-none');
+            dbConfig.classList.remove('d-none');
+        }
+    });
+
+    // Handle form submission
+    configForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        
+        fetch('/config', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.status === 'success') {
+                alert('Configuration saved successfully!');
+                location.reload();
+            } else {
+                alert('Error saving configuration');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error saving configuration');
+        });
+    });
+});
+</script>
+{% endblock %} 

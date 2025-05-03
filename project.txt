@@ -1,0 +1,12 @@
+├── pykms_Database.py      # Database abstraction layer
+├── pykms_WebGui.py        # Web interface implementation
+├── templates/
+│   ├── base.html          # Base template
+│   ├── dashboard.html     # Main dashboard
+│   ├── config.html        # Settings page
+│   ├── logs.html          # Log viewer
+│   └── clients.html       # Client management
+├── Dockerfile             # Updated with DB dependencies
+├── start.sh              # Enhanced with new options
+├── requirements.txt      # Added new dependencies
+└── README.md            # Updated documentation

@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Dashboard</h1>
+
+<!-- Statistics Cards -->
+<div class="row">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <h5 class="card-title">Total Clients</h5>
+                <h2 class="card-text">{{ stats.total_clients }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <h5 class="card-title">Active Clients</h5>
+                <h2 class="card-text">{{ stats.active_clients }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <h5 class="card-title">Windows Clients</h5>
+                <h2 class="card-text">{{ stats.windows_clients }}</h2>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <h5 class="card-title">Office Clients</h5>
+                <h2 class="card-text">{{ stats.office_clients }}</h2>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Client Distribution</h5>
+                <canvas id="clientDistributionChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">License Status</h5>
+                <canvas id="licenseStatusChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activations -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Recent Activations</h5>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Machine Name</th>
+                        <th>Application</th>
+                        <th>Status</th>
+                        <th>Last Request</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients[:5] %}
+                    <tr>
+                        <td>{{ client.machineName }}</td>
+                        <td>{{ client.applicationId }}</td>
+                        <td>
+                            <span class="badge {% if client.licenseStatus == 'Licensed' %}bg-success{% else %}bg-warning{% endif %}">
+                                {{ client.licenseStatus }}
+                            </span>
+                        </td>
+                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Client Distribution Chart
+    new Chart(document.getElementById('clientDistributionChart'), {
+        type: 'pie',
+        data: {
+            labels: ['Windows Clients', 'Office Clients'],
+            datasets: [{
+                data: [{{ stats.windows_clients }}, {{ stats.office_clients }}],
+                backgroundColor: ['#0dcaf0', '#ffc107']
+            }]
+        }
+    });
+
+    // License Status Chart
+    new Chart(document.getElementById('licenseStatusChart'), {
+        type: 'bar',
+        data: {
+            labels: ['Licensed', 'Unlicensed'],
+            datasets: [{
+                label: 'Number of Clients',
+                data: [{{ stats.active_clients }}, {{ stats.total_clients - stats.active_clients }}],
+                backgroundColor: ['#198754', '#dc3545']
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

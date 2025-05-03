@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+
+{% block title %}Logs{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Server Logs</h1>
+
+<div class="card">
+    <div class="card-body">
+        <div class="d-flex justify-content-between mb-3">
+            <div>
+                <button class="btn btn-primary" id="refreshLogs">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+                <div class="form-check form-switch d-inline-block ms-3">
+                    <input class="form-check-input" type="checkbox" id="autoRefresh">
+                    <label class="form-check-label" for="autoRefresh">Auto-refresh</label>
+                </div>
+            </div>
+            <div>
+                <select class="form-select" id="logLevel">
+                    <option value="all">All Levels</option>
+                    <option value="error">Error</option>
+                    <option value="warning">Warning</option>
+                    <option value="info">Info</option>
+                    <option value="debug">Debug</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="log-container bg-dark text-light p-3" style="height: 600px; overflow-y: auto; font-family: monospace;">
+            <pre id="logContent"></pre>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const logContent = document.getElementById('logContent');
+    const refreshBtn = document.getElementById('refreshLogs');
+    const autoRefreshToggle = document.getElementById('autoRefresh');
+    const logLevel = document.getElementById('logLevel');
+    let autoRefreshInterval;
+
+    function fetchLogs() {
+        fetch('/api/logs')
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    logContent.textContent = 'Error loading logs: ' + data.error;
+                    return;
+                }
+
+                const selectedLevel = logLevel.value;
+                let logs = data.logs;
+
+                if (selectedLevel !== 'all') {
+                    logs = logs.filter(log => {
+                        const logLowerCase = log.toLowerCase();
+                        return logLowerCase.includes(selectedLevel.toLowerCase());
+                    });
+                }
+
+                logContent.textContent = logs.join('');
+                logContent.scrollTop = logContent.scrollHeight;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                logContent.textContent = 'Error loading logs';
+            });
+    }
+
+    // Initial load
+    fetchLogs();
+
+    // Manual refresh
+    refreshBtn.addEventListener('click', fetchLogs);
+
+    // Auto-refresh toggle
+    autoRefreshToggle.addEventListener('change', function() {
+        if (this.checked) {
+            autoRefreshInterval = setInterval(fetchLogs, 5000); // Refresh every 5 seconds
+        } else {
+            clearInterval(autoRefreshInterval);
+        }
+    });
+
+    // Log level filter
+    logLevel.addEventListener('change', fetchLogs);
+});
+</script>
+{% endblock %} 

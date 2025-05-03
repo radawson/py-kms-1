@@ -12,6 +12,13 @@ ENV HWID		"364F463A8863D35F"
 ENV LOGLEVEL		ERROR
 ENV LOGFILE		/var/log/pykms_logserver.log
 ENV LOGSIZE		""
+ENV WEB_GUI		false
+ENV WEB_PORT		8080
+ENV DB_TYPE		sqlite
+ENV DB_HOST		localhost
+ENV DB_NAME		pykms
+ENV DB_USER		""
+ENV DB_PASSWORD		""
 
 COPY start.sh /usr/bin/start.sh
 
@@ -23,6 +30,8 @@ RUN apk add --no-cache --update \
 	py3-pygments \
 	python3-tkinter \
 	sqlite-libs \
+	mariadb-connector-c \
+	postgresql-libs \
 	py3-pip && \
     git clone https://github.com/SystemRage/py-kms.git /tmp/py-kms && \
     git clone https://github.com/coleifer/sqlite-web.git /tmp/sqlite_web && \
@@ -30,12 +39,12 @@ RUN apk add --no-cache --update \
     mv /tmp/sqlite_web/sqlite_web /home/ && \
     rm -rf /tmp/py-kms && \
     rm -rf /tmp/sqlite_web && \
-    pip3 install peewee tzlocal pysqlite3 && \
+    pip3 install peewee tzlocal pysqlite3 SQLAlchemy PyMySQL psycopg2-binary && \
     chmod a+x /usr/bin/start.sh && \
     apk del git
 
 WORKDIR /home/py-kms
 
-EXPOSE ${PORT}/tcp
+EXPOSE ${PORT}/tcp ${WEB_PORT}/tcp
 
 ENTRYPOINT ["/usr/bin/start.sh"]

@@ -322,6 +322,41 @@ Use "STDOUTOFF" to disable stdout messages. Use "FILEOFF" if you not want to cre
         "def": False,
         "des": "dual",
     },
+    "web_gui": {
+        "help": "Enable web-based GUI interface. Default is disabled.",
+        "def": False,
+        "des": "web_gui",
+    },
+    "web_port": {
+        "help": "Port for the web GUI interface. Default is 8080.",
+        "def": 8080,
+        "des": "web_port",
+    },
+    "db_type": {
+        "help": "Database backend type (sqlite/mysql/postgresql). Default is sqlite.",
+        "def": "sqlite",
+        "des": "db_type",
+    },
+    "db_host": {
+        "help": "Database host for MySQL/PostgreSQL.",
+        "def": "localhost",
+        "des": "db_host",
+    },
+    "db_name": {
+        "help": "Database name for MySQL/PostgreSQL.",
+        "def": "pykms",
+        "des": "db_name",
+    },
+    "db_user": {
+        "help": "Database user for MySQL/PostgreSQL.",
+        "def": "",
+        "des": "db_user",
+    },
+    "db_password": {
+        "help": "Database password for MySQL/PostgreSQL.",
+        "def": "",
+        "des": "db_password",
+    }
 }
 
 
@@ -526,6 +561,72 @@ def server_options():
         dest=srv_options["dual"]["des"],
         default=srv_options["dual"]["def"],
         help=srv_options["dual"]["help"],
+    )
+
+    # Add new command line arguments
+    server_parser.add_argument(
+        "-w",
+        "--web-gui",
+        action="store_true",
+        dest=srv_options["web_gui"]["des"],
+        default=srv_options["web_gui"]["def"],
+        help=srv_options["web_gui"]["help"]
+    )
+    
+    server_parser.add_argument(
+        "-wp",
+        "--web-port",
+        action="store",
+        dest=srv_options["web_port"]["des"],
+        default=srv_options["web_port"]["def"],
+        help=srv_options["web_port"]["help"],
+        type=int
+    )
+    
+    server_parser.add_argument(
+        "-dt",
+        "--db-type",
+        action="store",
+        dest=srv_options["db_type"]["des"],
+        choices=["sqlite", "mysql", "postgresql"],
+        default=srv_options["db_type"]["def"],
+        help=srv_options["db_type"]["help"]
+    )
+    
+    server_parser.add_argument(
+        "-dh",
+        "--db-host",
+        action="store",
+        dest=srv_options["db_host"]["des"],
+        default=srv_options["db_host"]["def"],
+        help=srv_options["db_host"]["help"]
+    )
+    
+    server_parser.add_argument(
+        "-dn",
+        "--db-name",
+        action="store",
+        dest=srv_options["db_name"]["des"],
+        default=srv_options["db_name"]["def"],
+        help=srv_options["db_name"]["help"]
+    )
+    
+    server_parser.add_argument(
+        "-du",
+        "--db-user",
+        action="store",
+        dest=srv_options["db_user"]["des"],
+        default=srv_options["db_user"]["def"],
+        help=srv_options["db_user"]["help"]
+    )
+    
+    server_parser.add_argument(
+        "-dp",
+        "--db-password",
+        action="store",
+        dest=srv_options["db_password"]["des"],
+        default=srv_options["db_password"]["def"],
+        help=srv_options["db_password"]["help"]
     )
 
     try:
@@ -844,6 +945,54 @@ def server_check():
 
             addresses.append((addr, port))
         srv_config["listen"] = addresses
+
+    # Check database configuration
+    if srv_config["db_type"] not in ["sqlite", "mysql", "postgresql"]:
+        pretty_printer(
+            log_obj=loggersrv.error,
+            to_exit=True,
+            put_text="{reverse}{red}{bold}Invalid database type. Must be one of: sqlite, mysql, postgresql{end}"
+        )
+    
+    if srv_config["db_type"] in ["mysql", "postgresql"]:
+        if not srv_config["db_user"] or not srv_config["db_password"]:
+            pretty_printer(
+                log_obj=loggersrv.error,
+                to_exit=True,
+                put_text="{reverse}{red}{bold}Database user and password are required for MySQL/PostgreSQL{end}"
+            )
+    
+    # Initialize web GUI if enabled
+    if srv_config["web_gui"]:
+        try:
+            from pykms_WebGui import init_web_gui
+            import threading
+            
+            web_config = {
+                'db_type': srv_config["db_type"],
+                'db_host': srv_config["db_host"],
+                'db_name': srv_config["db_name"],
+                'db_user': srv_config["db_user"],
+                'db_password': srv_config["db_password"],
+                'web_port': srv_config["web_port"],
+                'LOGFILE': srv_config["logfile"]
+            }
+            
+            app = init_web_gui(web_config)
+            web_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=srv_config["web_port"]))
+            web_thread.daemon = True
+            web_thread.start()
+            
+            pretty_printer(
+                log_obj=loggersrv.info,
+                put_text="Web GUI started on http://0.0.0.0:%d" % srv_config["web_port"]
+            )
+        except ImportError as e:
+            pretty_printer(
+                log_obj=loggersrv.warning,
+                put_text="{reverse}{yellow}{bold}Failed to start web GUI: %s{end}" % str(e)
+            )
+            srv_config["web_gui"] = False
 
 
 def server_create():

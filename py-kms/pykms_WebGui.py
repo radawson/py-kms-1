@@ -1,0 +1,99 @@
+#!/usr/bin/env python3
+
+import os
+import logging
+from datetime import datetime
+from flask import Flask, render_template, jsonify, request
+from pykms_Database import create_backend
+
+app = Flask(__name__)
+loggersrv = logging.getLogger('logsrv')
+
+# Global database backend instance
+db = None
+
+@app.route('/')
+def index():
+    """Dashboard showing activation statistics"""
+    clients = db.get_all_clients()
+    stats = {
+        'total_clients': len(clients),
+        'active_clients': sum(1 for c in clients if c.licenseStatus == 'Licensed'),
+        'windows_clients': sum(1 for c in clients if 'Windows' in c.applicationId),
+        'office_clients': sum(1 for c in clients if 'Office' in c.applicationId)
+    }
+    return render_template('dashboard.html', stats=stats, clients=clients)
+
+@app.route('/clients')
+def client_list():
+    """Client management interface"""
+    clients = db.get_all_clients()
+    return render_template('clients.html', clients=clients)
+
+@app.route('/config', methods=['GET', 'POST'])
+def config():
+    """Configuration settings interface"""
+    if request.method == 'POST':
+        # Update configuration
+        new_config = {
+            'db_type': request.form.get('db_type', 'sqlite'),
+            'db_host': request.form.get('db_host', ''),
+            'db_user': request.form.get('db_user', ''),
+            'db_password': request.form.get('db_password', ''),
+            'db_name': request.form.get('db_name', ''),
+            'sqlite_path': request.form.get('sqlite_path', 'pykms_database.db'),
+            'web_port': request.form.get('web_port', 8080),
+        }
+        # Save configuration
+        save_config(new_config)
+        return jsonify({'status': 'success'})
+    
+    return render_template('config.html', config=load_config())
+
+@app.route('/logs')
+def logs():
+    """Real-time logs viewer"""
+    return render_template('logs.html')
+
+@app.route('/api/logs')
+def get_logs():
+    """API endpoint for fetching logs"""
+    try:
+        with open(app.config['LOGFILE'], 'r') as f:
+            logs = f.readlines()[-100:]  # Get last 100 lines
+        return jsonify({'logs': logs})
+    except Exception as e:
+        return jsonify({'error': str(e)})
+
+def save_config(config):
+    """Save configuration to file"""
+    import json
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    with open(config_path, 'w') as f:
+        json.dump(config, f, indent=4)
+
+def load_config():
+    """Load configuration from file"""
+    import json
+    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    try:
+        with open(config_path, 'r') as f:
+            return json.load(f)
+    except:
+        return {
+            'db_type': 'sqlite',
+            'sqlite_path': 'pykms_database.db',
+            'web_port': 8080
+        }
+
+def init_web_gui(config):
+    """Initialize the web GUI with configuration"""
+    global db
+    db = create_backend(config)
+    app.config.update(config)
+    return app
+
+if __name__ == '__main__':
+    config = load_config()
+    app = init_web_gui(config)
+    app.run(host='0.0.0.0', port=config.get('web_port', 8080)) 
