@@ -888,7 +888,7 @@
 			</KmsItem>
 
 			<KmsItem DisplayName="Windows Server 2022" Id="adf06f0c-e7c3-4f70-ad30-734f31a3bd01" DefaultKmsProtocol="6.0" NCountPolicy="5">
-				<SkuItem DisplayName="Windows Server 2022 Datacenter" Id="8c8f0ad3-9a43-4e05-b840-93b8d1d0307" Gvlk="WX4NM-KYWYW-QJJR4-XV3QB-6VM33" />
+				<SkuItem DisplayName="Windows Server 2022 Datacenter" Id="adf06f0c-e7c3-4f70-ad30-734f31a3bd01" Gvlk="WX4NM-KYWYW-QJJR4-XV3QB-6VM33" />
 				<SkuItem DisplayName="Windows Server 2022 Standard" Id="c085bf01-48ad-4875-87f2-bd0414dac8a4" Gvlk="VDYBN-27WPP-V4HQT-9VMD4-VMK7H" />
 				<SkuItem DisplayName="Windows Server 2022 Datacenter: Azure Edition" Id="d30136fc-cb4b-416e-a23d-87207abc44a9" Gvlk="NTBV8-9K7Q8-V27C6-M2BTV-KHMXV" />
 			</KmsItem>
