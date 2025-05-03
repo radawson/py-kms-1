@@ -3,6 +3,7 @@
 import hashlib
 import hmac
 import struct
+import logging
 
 import pykms_Aes as aes
 from pykms_Base import kmsBase
@@ -84,6 +85,12 @@ class kmsRequestV6(kmsRequestV5):
                 responsedata = self.DecryptedResponse()
                 responsedata['message'] = message
                 responsedata['hmac'] = digest[16:]
+
+                # *** Add detailed logging of the response components ***
+                log_obj = logging.getLogger('logsrv') # Assuming logger name is 'logsrv'
+                log_obj.debug("KMS Response Data (kmsResponseStruct):\\n%s", str(response))
+                log_obj.debug("Full Decrypted Response Packet (before padding/encryption):\\n%s", str(responsedata))
+                # *** End of added logging ***
 
                 padded = aes.append_PKCS7_padding(enco(str(responsedata), 'latin-1'))
                 mode, orig_len, crypted = moo.encrypt(padded, moo.ModeOfOperation["CBC"], self.key, moo.aes.KeySize["SIZE_128"], SaltS)
