@@ -174,6 +174,11 @@ def logger_create(log_obj, config, mode = 'a'):
 
         file_formatter = LevelFormatter(file_formats, color=False)
         console_formatter = LevelFormatter(console_formats, color=True)
+        # *** Define a standard formatter for debug fallback ***
+        standard_formatter = logging.Formatter(
+            '%(asctime)s %(levelname)-8s [%(name)s] %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S' # Use a more standard date format
+        )
 
         # Clear old handlers before adding new ones
         if log_obj.handlers:
@@ -199,8 +204,14 @@ def logger_create(log_obj, config, mode = 'a'):
 
         if log_to_console:
             console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.setLevel(config['loglevel']) # Set level correctly
-            console_handler.setFormatter(console_formatter)
+            # *** Force console handler level to DEBUG if requested ***
+            log_level_to_set = logging.DEBUG if config['loglevel'] == 'DEBUG' else config['loglevel']
+            console_handler.setLevel(log_level_to_set)
+            # *** Use standard formatter for console if DEBUG, otherwise custom ***
+            if config['loglevel'] == 'DEBUG':
+                 console_handler.setFormatter(standard_formatter)
+            else:
+                 console_handler.setFormatter(console_formatter)
             log_obj.addHandler(console_handler)
 
         if not log_to_file and not log_to_console:
@@ -522,15 +533,17 @@ def check_setup(config, options, logger, where):
                 # set a recognized level never used.
                 config['loglevel'] = 'ERROR'
 
-        # Setup hidden / asynchronous messages.
+        # Setup hidden messages.
         hidden = ['STDOUT', 'FILESTDOUT', 'STDOUTOFF']
         view_flag = (False if any(opt in hidden for opt in config['logfile']) else True)
         if where == 'srv':
                 ShellMessage.viewsrv = view_flag
-                ShellMessage.asyncmsgsrv = config['asyncmsg']
+                # Remove asyncmsg assignment as it's no longer configured
+                # ShellMessage.asyncmsgsrv = config['asyncmsg']
         elif where == 'clt':
                 ShellMessage.viewclt = view_flag
-                ShellMessage.asyncmsgclt = config['asyncmsg']
+                # Remove asyncmsg assignment as it's no longer configured
+                # ShellMessage.asyncmsgclt = config['asyncmsg']
 
         # Create log.
         logger_create(logger, config, mode = 'a')
