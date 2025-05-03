@@ -59,7 +59,24 @@ def logs():
 def get_logs():
     """API endpoint for fetching logs"""
     try:
-        with open(app.config['LOGFILE'], 'r') as f:
+        logfile = app.config['LOGFILE']
+        
+        # Handle different logfile configurations
+        if isinstance(logfile, list):
+            # For FILESTDOUT or STDOUTOFF, use the second element (actual file path)
+            if len(logfile) > 1 and logfile[0] in ['FILESTDOUT', 'STDOUTOFF']:
+                logfile = logfile[1]
+            # For FILE configuration, use the first element
+            elif logfile[0] not in ['STDOUT', 'FILEOFF']:
+                logfile = logfile[0]
+            else:
+                return jsonify({'error': 'Logging to file is not enabled'})
+        
+        # If logging is disabled or set to stdout only
+        if logfile in ['STDOUT', 'FILEOFF']:
+            return jsonify({'error': 'Logging to file is not enabled'})
+            
+        with open(logfile, 'r') as f:
             logs = f.readlines()[-100:]  # Get last 100 lines
         return jsonify({'logs': logs})
     except Exception as e:

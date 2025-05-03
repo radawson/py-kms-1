@@ -565,7 +565,7 @@ def server_options():
 
     # Add new command line arguments
     server_parser.add_argument(
-        "-w",
+        "-wg",
         "--web-gui",
         action="store_true",
         dest=srv_options["web_gui"]["des"],

@@ -59,7 +59,7 @@ This will start the server on all interfaces (0.0.0.0) on port 1688.
 ### Web GUI
 To enable the web-based management interface:
 ```bash
-python3 pykms_Server.py --web-gui --web-port 8080
+python3 pykms_Server.py -wg --web-port 8080
 ```
 Access the web interface at `http://localhost:8080`
 
