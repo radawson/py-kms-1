@@ -28,6 +28,47 @@ echo_out() {
 }
 
 setup_ubuntu(){
+  # Create pykms group if it doesn't exist
+  if ! getent group pykms > /dev/null; then
+    sudo groupadd -r pykms
+    echo_out "Created pykms group."
+  else
+    echo_out "pykms group already exists."
+  fi
+
+  # Create pykms user if it doesn't exist
+  if ! id "pykms" &>/dev/null; then
+    sudo useradd -r -g pykms -d /opt/py-kms -s /sbin/nologin pykms
+    echo_out "Created pykms system user."
+  else
+    echo_out "pykms user already exists."
+  fi
+
+  # Create installation directory
+  echo_out "Creating installation directory /opt/py-kms..."
+  sudo mkdir -p /opt/py-kms
+
+  # Copy application files (including requirements.txt)
+  echo_out "Copying application files to /opt/py-kms..."
+  sudo cp -r ./py-kms /opt/py-kms/
+  sudo cp ./requirements.txt /opt/py-kms/
+
+  # Set ownership
+  echo_out "Setting ownership for /opt/py-kms..."
+  sudo chown -R pykms:pykms /opt/py-kms
+
+  # Create virtual environment
+  echo_out "Creating Python virtual environment in /opt/py-kms/venv..."
+  # Run as pykms user to ensure correct ownership
+  sudo -u pykms python3 -m venv /opt/py-kms/venv 
+
+  # Install requirements
+  echo_out "Installing dependencies from requirements.txt into virtual environment..."
+  # Run pip install as pykms user
+  sudo -u pykms /opt/py-kms/venv/bin/pip install -r /opt/py-kms/requirements.txt
+
+  # Copy and enable systemd service
+  echo_out "Setting up systemd service..."
   sudo cp ./resources/kms-server-ubuntu /lib/systemd/system/kms-server.service
   sudo systemctl daemon-reload
   sudo systemctl enable kms-server.service
