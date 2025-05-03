@@ -26,8 +26,8 @@ def sql_initialize(dbName):
 licenseStatus TEXT, lastRequestTime INTEGER, kmsEpid TEXT, requestCount INTEGER)")
 
                 except sqlite3.Error as e:
-                        pretty_printer(log_obj = loggersrv.error, to_exit = True,
-                                       put_text = "{reverse}{red}{bold}Sqlite Error: %s. Exiting...{end}" %str(e))
+                        pretty_printer(log_obj = loggersrv.error, to_exit = False,
+                                       put_text = "{reverse}{red}{bold}Sqlite Error in sql_initialize: %s. Continuing...{end}" %str(e))
                 finally:
                         if con:
                                 con.commit()
@@ -67,11 +67,11 @@ clientMachineId=:clientMachineId AND applicationId=:appId;", infoDict)
 clientMachineId=:clientMachineId AND applicationId=:appId;", infoDict)
 
                 except sqlite3.Error as e:
-                        pretty_printer(log_obj = loggersrv.error, to_exit = True,
-                                       put_text = "{reverse}{red}{bold}Sqlite Error: %s. Exiting...{end}" %str(e))
+                        pretty_printer(log_obj = loggersrv.error, to_exit = False,
+                                       put_text = "{reverse}{red}{bold}Sqlite Error during insert/update: %s. Continuing...{end}" %str(e))
         except sqlite3.Error as e:
-                pretty_printer(log_obj = loggersrv.error, to_exit = True,
-                               put_text = "{reverse}{red}{bold}Sqlite Error: %s. Exiting...{end}" %str(e))
+                pretty_printer(log_obj = loggersrv.error, to_exit = False,
+                               put_text = "{reverse}{red}{bold}Sqlite Error connecting/querying in sql_update: %s. Continuing...{end}" %str(e))
         finally:
                 if con:
                     con.commit()
@@ -90,11 +90,11 @@ def sql_update_epid(dbName, kmsRequest, response, appName):
 clientMachineId=? AND applicationId=?;", (str(response["kmsEpid"].decode('utf-16le')), cmid, appName))
 
                 except sqlite3.Error as e:
-                        pretty_printer(log_obj = loggersrv.error, to_exit = True,
-                                       put_text = "{reverse}{red}{bold}Sqlite Error: %s. Exiting...{end}" %str(e))
+                        pretty_printer(log_obj = loggersrv.error, to_exit = False,
+                                       put_text = "{reverse}{red}{bold}Sqlite Error during ePID update query: %s. Continuing...{end}" %str(e))
         except sqlite3.Error as e:
-                pretty_printer(log_obj = loggersrv.error, to_exit = True,
-                               put_text = "{reverse}{red}{bold}Sqlite Error: %s. Exiting...{end}" %str(e))
+                pretty_printer(log_obj = loggersrv.error, to_exit = False,
+                               put_text = "{reverse}{red}{bold}Sqlite Error connecting/querying in sql_update_epid: %s. Continuing...{end}" %str(e))
         finally:
                 if con:
                         con.commit()

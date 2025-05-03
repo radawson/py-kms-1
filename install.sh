@@ -50,12 +50,17 @@ setup_ubuntu(){
 
   # Copy application files (including requirements.txt)
   echo_out "Copying application files to /opt/py-kms..."
-  sudo cp -r ./py-kms /opt/py-kms/
+  sudo cp -r ./py-kms/* /opt/py-kms/
   sudo cp ./requirements.txt /opt/py-kms/
 
   # Set ownership
   echo_out "Setting ownership for /opt/py-kms..."
   sudo chown -R pykms:pykms /opt/py-kms
+
+  # Ensure database file exists and has correct permissions
+  echo_out "Setting up database file permissions..."
+  sudo -u pykms touch /opt/py-kms/pykms_database.db
+  sudo chown pykms:pykms /opt/py-kms/pykms_database.db
 
   # Create virtual environment
   echo_out "Creating Python virtual environment in /opt/py-kms/venv..."
