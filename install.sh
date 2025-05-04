@@ -74,6 +74,7 @@ setup_ubuntu(){
 
   # Copy config file
   echo_out "Copying config file to /etc/py-kms/config.yaml..."
+  sudo mkdir -p /etc/py-kms
   sudo cp ./resources/config.yaml /etc/py-kms/config.yaml
   sudo chown pykms:pykms /etc/py-kms/config.yaml
 
