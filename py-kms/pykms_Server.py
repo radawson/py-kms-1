@@ -31,7 +31,7 @@ from pykms_Misc import (
 from pykms_Format import enco, deco, pretty_printer, justify
 from pykms_Connect import MultipleListener
 
-srv_version = "py-kms_2020-10-01"
+srv_version = "py-kms_2025-05-03"
 __license__ = "The Unlicense"
 __author__ = "Matteo ℱan <SystemRage@protonmail.com>"
 __url__ = "https://github.com/SystemRage/py-kms"
