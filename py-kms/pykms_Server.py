@@ -356,11 +356,13 @@ def server_options():
     server_parser = KmsParser(
         description=srv_description, epilog="version: " + srv_version, add_help=False
     )
+    
+    # Make IP and port optional when using config file
     server_parser.add_argument(
         "ip",
         nargs="?",
         action="store",
-        default=srv_options["ip"]["def"],
+        default=None,  # Changed from srv_options["ip"]["def"]
         help=srv_options["ip"]["help"],
         type=str,
     )
@@ -368,7 +370,7 @@ def server_options():
         "port",
         nargs="?",
         action="store",
-        default=srv_options["port"]["def"],
+        default=None,  # Changed from srv_options["port"]["def"]
         help=srv_options["port"]["help"],
         type=int,
     )
@@ -593,7 +595,15 @@ def server_options():
         config = KmsServerConfig(args.config_file)
         
         # Update configuration with command line arguments (they take precedence)
-        config.update_from_args(vars(args))
+        args_dict = vars(args)
+        
+        # Only update IP/port from args if explicitly provided
+        if args.ip is not None:
+            args_dict['ip'] = args.ip
+        if args.port is not None:
+            args_dict['port'] = args.port
+            
+        config.update_from_args(args_dict)
         
         # Update srv_config with values from configuration
         srv_config.update({
@@ -632,22 +642,18 @@ def server_options():
                     listener.get('reuse', True)
                 ))
 
-        # Run help if requested, simplifying parser list
+        # Run help if requested
         if any(arg in ["-h", "--help"] for arg in sys.argv[1:]):
-             # Simplified help printer without daemon/etrigan subparsers
-             KmsParserHelp().printer(
-                 parsers=[
-                     server_parser,
-                     (connection_parser, connect_parser), # Keep connection options relevant
-                 ]
-             )
+            KmsParserHelp().printer(
+                parsers=[
+                    server_parser,
+                    (connection_parser, connect_parser),
+                ]
+            )
 
         # Get stored arguments for server and connection options
         pykmssrv_zeroarg, pykmssrv_onearg = kms_parser_get(server_parser)
         connect_zeroarg, connect_onearg = kms_parser_get(connect_parser)
-
-        # Simplified argument checking logic
-        # No longer need to check for 'etrigan' subparser
 
         # Check for 'connect' subparser presence
         connect_present = 'connect' in sys.argv[1:]
@@ -659,9 +665,8 @@ def server_options():
             pykmssrv_zeroarg,
             pykmssrv_onearg,
             exclude_opt_len=["-F", "--logfile"],
-            exclude_opt_dup=["-n", "--listen", "-b", "--backlog", "-u", "--no-reuse"] # Exclude connect options from main check
+            exclude_opt_dup=["-n", "--listen", "-b", "--backlog", "-u", "--no-reuse"]
         )
-        kms_parser_check_positionals(srv_config, server_parser.parse_args, arguments=sys.argv[:connect_idx], force_parse=True)
 
         # Check 'connect' options if present
         if connect_present:
@@ -686,7 +691,8 @@ def server_options():
 
     except KmsParserException as e:
         pretty_printer(
-            put_text="{reverse}{red}{bold}%s. Exiting...{end}" % str(e), to_exit=True
+            put_text="{reverse}{red}{bold}%s. Exiting...{end}" % str(e),
+            to_exit=True
         )
 
 

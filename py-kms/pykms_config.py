@@ -4,7 +4,7 @@
 import os
 import yaml
 from typing import Dict, Any, Optional, Tuple
-from pykms_Validators import validate_epid, validate_lcid
+from pykms_Validators import validate_epid, validate_lcid, validate_ip_address
 
 class ConfigurationError(Exception):
     """Exception raised for configuration validation errors."""
@@ -56,6 +56,23 @@ class KmsServerConfig:
         Raises:
             ConfigurationError: If validation fails
         """
+        # Validate IP address
+        ip = self.get('server', 'ip')
+        if ip is not None:
+            is_valid, error = validate_ip_address(ip)
+            if not is_valid:
+                raise ConfigurationError(f"Invalid IP address configuration: {error}")
+
+        # Validate port
+        port = self.get('server', 'port')
+        if port is not None:
+            try:
+                port_num = int(port)
+                if not (1 <= port_num <= 65535):
+                    raise ConfigurationError(f"Invalid port number: {port}. Must be between 1 and 65535")
+            except ValueError:
+                raise ConfigurationError(f"Port must be a number, got: {port}")
+
         # Validate EPID if specified
         epid = self.get('kms', 'epid')
         if epid is not None:
@@ -90,6 +107,35 @@ class KmsServerConfig:
                         raise ConfigurationError(f"{interval.title()} interval cannot be negative")
                 except ValueError:
                     raise ConfigurationError(f"{interval.title()} interval must be a number")
+
+        # Validate additional listeners
+        listeners = self.get('server', 'additional_listeners', [])
+        for listener in listeners:
+            # Check required fields
+            if 'address' not in listener or 'port' not in listener:
+                raise ConfigurationError("Additional listeners must specify 'address' and 'port'")
+            
+            # Validate IP
+            is_valid, error = validate_ip_address(listener['address'])
+            if not is_valid:
+                raise ConfigurationError(f"Invalid listener IP address: {error}")
+            
+            # Validate port
+            try:
+                port = int(listener['port'])
+                if not (1 <= port <= 65535):
+                    raise ConfigurationError(f"Invalid listener port number: {port}. Must be between 1 and 65535")
+            except ValueError:
+                raise ConfigurationError(f"Listener port must be a number, got: {listener['port']}")
+            
+            # Validate optional fields
+            if 'backlog' in listener:
+                try:
+                    backlog = int(listener['backlog'])
+                    if backlog < 0:
+                        raise ConfigurationError("Listener backlog cannot be negative")
+                except ValueError:
+                    raise ConfigurationError("Listener backlog must be a number")
 
     def _load_from_file(self, path: str) -> None:
         """Load configuration from specified YAML file."""

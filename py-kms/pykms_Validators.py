@@ -2,7 +2,34 @@
 # -*- coding: utf-8 -*-
 
 import re
+import socket
 from typing import Optional, Tuple
+
+def validate_ip_address(ip: str) -> Tuple[bool, Optional[str]]:
+    """Validate an IP address (IPv4 or IPv6).
+    
+    Args:
+        ip: The IP address to validate
+        
+    Returns:
+        Tuple of (is_valid: bool, error_message: Optional[str])
+    """
+    if not ip:
+        return False, "IP address cannot be empty"
+
+    # Check for IPv4
+    try:
+        socket.inet_pton(socket.AF_INET, ip)
+        return True, None
+    except socket.error:
+        pass
+
+    # Check for IPv6
+    try:
+        socket.inet_pton(socket.AF_INET6, ip)
+        return True, None
+    except socket.error:
+        return False, f"'{ip}' does not appear to be an IPv4 or IPv6 address"
 
 def validate_epid(epid: str) -> Tuple[bool, Optional[str]]:
     """Validate a KMS Enterprise ID (EPID).
