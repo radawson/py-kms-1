@@ -58,6 +58,7 @@ class LevelFormatter(logging.Formatter):
         def __init__(self, formats, color = False):
                 """ `formats` is a dict { loglevel : logformat } """
                 self.formatters = {}
+                self.formats = formats  # Store formats dict
                 for loglevel in formats:
                         if color:
                                 frmt = self.colorize(formats, loglevel)
@@ -77,27 +78,20 @@ class LevelFormatter(logging.Formatter):
                 elif loglevel == logging.INFO:
                         frmt = '{cyan}' + formats[loglevel] + '{end}'
                 elif loglevel == logging.DEBUG:
-                        # Explicitly handle DEBUG level
                         frmt = '{green}' + formats[loglevel] + '{end}'
                 else:
-                        # Keep default fallback for any other levels
                         frmt = '{end}' + formats[loglevel] + '{end}'
                 return frmt
 
         def format(self, record):
-                # Ensure the correct formatter is fetched, including DEBUG if handled
                 formatter = self.formatters.get(record.levelno, self.default_fmt)
-                # Add fallback for DEBUG level if somehow not in formatters, though colorize should handle it.
                 if record.levelno == logging.DEBUG and record.levelno not in self.formatters:
-                     # Use a default debug format if needed (e.g., same as INFO/GEN)
-                     # This part might be redundant if the __init__ loop correctly adds it
-                     # based on the updated colorize logic implicitly affecting the formats dict,
-                     # but adding belt-and-suspenders logic here.
-                     # Let's assume formats[0] is the standard format used for INFO/DEBUG etc.
-                     if logging.DEBUG not in self.formatters and 0 in formats:
-                          self.formatters[logging.DEBUG] = logging.Formatter(self.colorize({logging.DEBUG: formats[0]}, logging.DEBUG).format(**ColorExtraMap), datefmt=self.dfmt)
+                     if logging.DEBUG not in self.formatters and 0 in self.formats:
+                          self.formatters[logging.DEBUG] = logging.Formatter(
+                              self.colorize({logging.DEBUG: self.formats[0]}, logging.DEBUG).format(**ColorExtraMap),
+                              datefmt=self.dfmt
+                          )
                           formatter = self.formatters[logging.DEBUG]
-
                 return formatter.format(record)
 
 # Remove MultiProcessingLogHandler class entirely
@@ -115,6 +109,9 @@ def logger_create(log_obj, config, mode = 'a'):
         num_lvl_mininfo = 25
         add_logging_level('MININFO', num_lvl_mininfo)
 
+        # Convert log level string to actual logging level
+        log_level = getattr(logging, config['loglevel'])
+
         # Determine desired handlers based on config['logfile']
         log_to_file = False
         log_to_console = True  # Default to console logging
@@ -131,7 +128,6 @@ def logger_create(log_obj, config, mode = 'a'):
              elif log_mode == 'STDOUTOFF':
                   log_to_file = True
                   log_to_console = False
-             # Implicitly handle ['STDOUT'] from list conversion below
         elif isinstance(config['logfile'], str):
             log_mode = config['logfile']
             if log_mode == 'STDOUT':
@@ -139,16 +135,16 @@ def logger_create(log_obj, config, mode = 'a'):
                  log_to_file = False
             elif log_mode == 'FILEOFF':
                  log_to_console = False
-                 log_to_file = False # Add NullHandler later
-            else: # Default case (FILE)
+                 log_to_file = False
+            elif log_mode == 'FILE':
                  log_to_file = True
-                 log_to_console = True # Usually want console for file mode too
+                 log_to_console = True
                  log_filename = log_mode
-        else:
-             # Fallback / error? Assume default: log to console and default file
-             log_to_file = True
-             log_to_console = True
-             log_filename = os.path.join(".", "pykms_logserver.log") # Use a default name
+            else:
+                 # Treat as filename
+                 log_to_file = True
+                 log_to_console = True
+                 log_filename = log_mode
 
         # Configure formatters
         try:
@@ -158,11 +154,11 @@ def logger_create(log_obj, config, mode = 'a'):
         levelnum = [k for k in levelnames if k != 0]
 
         # Define standard and minimal formats
-        frmt_gen = '%(asctime)s %(levelname)-8s %(message)s' # Format for file
-        frmt_std = '%(asctime)s %(levelname)-8s [%(name)s] %(message)s' # Format for console
+        frmt_gen = '%(asctime)s %(levelname)-8s %(message)s'
+        frmt_std = '%(asctime)s %(levelname)-8s [%(name)s] %(message)s'
         frmt_min = '%(asctime)s %(levelname)-8s %(host)s   %(status)s   %(product)s  %(message)s'
 
-        # Gui adjustments (keep for now, maybe remove later if GUI is fully separate)
+        # Gui adjustments
         from pykms_Server import serverthread
         if serverthread.with_gui:
                 frmt_std = '%(name)s ' + frmt_std
@@ -174,52 +170,45 @@ def logger_create(log_obj, config, mode = 'a'):
 
         file_formatter = LevelFormatter(file_formats, color=False)
         console_formatter = LevelFormatter(console_formats, color=True)
-        # *** Define a standard formatter for debug fallback ***
-        standard_formatter = logging.Formatter(
-            '%(asctime)s %(levelname)-8s [%(name)s] %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S' # Use a more standard date format
-        )
 
-        # Clear old handlers before adding new ones
+        # Clear old handlers
         if log_obj.handlers:
                 log_obj.handlers = []
 
         # Create and add handlers
         if log_to_file and log_filename:
             try:
-                # Ensure directory exists if specified in log_filename
+                # Ensure directory exists
                 log_dir = os.path.dirname(log_filename)
                 if log_dir and not os.path.exists(log_dir):
                     os.makedirs(log_dir)
-                # Create file handler
-                file_handler = RotatingFileHandler(filename=log_filename, mode=mode,
-                                                   maxBytes=int(config['logsize'] * 1024 * 512) if config['logsize'] else 0,
-                                                   backupCount=1, encoding=None, delay=0)
-                file_handler.setLevel(config['loglevel'])
+                
+                # Create file handler with proper level
+                file_handler = logging.handlers.RotatingFileHandler(
+                    filename=log_filename,
+                    mode=mode,
+                    maxBytes=int(config['logsize'] * 1024 * 512) if config['logsize'] else 0,
+                    backupCount=1
+                )
+                file_handler.setLevel(log_level)
                 file_handler.setFormatter(file_formatter)
                 log_obj.addHandler(file_handler)
             except Exception as e:
-                 print(f"Error setting up file logging for {log_filename}: {e}", file=sys.stderr)
-                 log_to_console = True # Force console logging if file logging fails
+                print(f"Error setting up file logging: {e}", file=sys.stderr)
+                log_to_console = True  # Fallback to console logging
 
         if log_to_console:
             console_handler = logging.StreamHandler(sys.stdout)
-            # *** Force console handler level to DEBUG if requested ***
-            log_level_to_set = logging.DEBUG if config['loglevel'] == 'DEBUG' else config['loglevel']
-            console_handler.setLevel(log_level_to_set)
-            # *** Use standard formatter for console if DEBUG, otherwise custom ***
-            if config['loglevel'] == 'DEBUG':
-                 console_handler.setFormatter(standard_formatter)
-            else:
-                 console_handler.setFormatter(console_formatter)
+            console_handler.setLevel(log_level)
+            console_handler.setFormatter(console_formatter)
             log_obj.addHandler(console_handler)
 
         if not log_to_file and not log_to_console:
-            # Add NullHandler if both file and console are off (FILEOFF)
+            # Add NullHandler if both file and console are off
             log_obj.addHandler(logging.NullHandler())
 
         # Set the main logger level
-        log_obj.setLevel(config['loglevel'])
+        log_obj.setLevel(log_level)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 def check_dir(path, where, log_obj = None, argument = '-F/--logfile', typefile = '.log'):

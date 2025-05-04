@@ -1,0 +1,35 @@
+# Include production dependencies
+-r requirements.in
+
+# Documentation
+Sphinx>=7.2.6  # Documentation generator
+sphinx-markdown-tables>=0.0.17  # Markdown table support
+sphinxcontrib-applehelp>=1.0.7  # Apple Help support
+sphinxcontrib-devhelp>=1.0.5  # DevHelp support
+sphinxcontrib-htmlhelp>=2.0.4  # HTML help support
+sphinxcontrib-jsmath>=1.0.1  # JSMath support
+sphinxcontrib-qthelp>=1.0.6  # Qt Help support
+sphinxcontrib-serializinghtml>=1.1.9  # Serializing HTML
+recommonmark>=0.7.1  # Markdown support
+alabaster>=0.7.12  # Sphinx theme
+commonmark>=0.9.1  # Markdown parser
+docutils>=0.20.1  # Documentation utilities
+Markdown>=3.5.2  # Markdown parser
+Pygments>=2.17.2  # Syntax highlighting
+
+# Development tools
+appdirs>=1.4.4  # App directories
+CacheControl>=0.12.6  # HTTP caching
+distlib>=0.3.8  # Distribution utilities
+distro>=1.9.0  # OS distribution info
+html5lib>=1.1  # HTML parser
+pep517>=0.13.1  # Build system abstraction
+progress>=1.6  # Progress bars
+pytoml>=0.1.21  # TOML parser
+retrying>=1.3.4  # Retrying operations
+
+# Testing and utilities
+six>=1.16.0  # Python 2/3 compatibility
+pytz>=2024.1  # Timezone handling
+ordered-set>=4.1.0  # Ordered sets
+msgpack>=1.0.7  # MessagePack serialization 
