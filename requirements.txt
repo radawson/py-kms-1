@@ -37,6 +37,10 @@ psycopg2-binary==2.9.10
     # via -r requirements.in
 pymysql==1.1.1
     # via -r requirements.in
+pytz==2025.2
+    # via -r requirements.in
+pyyaml==6.0.2
+    # via -r requirements.in
 requests==2.32.3
     # via -r requirements.in
 sqlalchemy==2.0.40
@@ -45,6 +49,8 @@ toml==0.10.2
     # via -r requirements.in
 typing-extensions==4.13.2
     # via sqlalchemy
+tzlocal==5.3.1
+    # via -r requirements.in
 urllib3==2.4.0
     # via
     #   -r requirements.in

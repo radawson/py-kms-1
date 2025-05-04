@@ -3,6 +3,7 @@ Flask>=3.0.2  # Web interface
 SQLAlchemy>=2.0.28  # Database ORM
 psycopg2-binary>=2.9.9  # PostgreSQL adapter
 PyMySQL>=1.1.0  # MySQL adapter
+PyYAML>=6.0.0
 requests>=2.31.0  # HTTP client
 toml>=0.10.2  # TOML file parsing
 urllib3>=2.2.1  # HTTP client library

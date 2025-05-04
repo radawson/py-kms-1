@@ -30,6 +30,7 @@ from pykms_Misc import (
 )
 from pykms_Format import enco, deco, pretty_printer, justify
 from pykms_Connect import MultipleListener
+from pykms_config import KmsServerConfig
 
 srv_version = "py-kms_2025-05-03"
 __license__ = "The Unlicense"
@@ -533,6 +534,16 @@ def server_options():
         "-h", "--help", action="help", help="show this help message and exit"
     )
 
+    # Add new argument for config file
+    server_parser.add_argument(
+        "-cf", "--config-file",
+        action="store",
+        dest="config_file",
+        default=None,
+        help="Path to configuration file. If not specified, will search in default locations.",
+        type=str
+    )
+
     ## Connection parsing.
     connection_parser = KmsParser(description="connect options", add_help=False)
     connection_subparser = connection_parser.add_subparsers(dest="mode")
@@ -575,10 +586,54 @@ def server_options():
     )
 
     try:
-        userarg = sys.argv[1:]
+        # Parse command line arguments first
+        args = server_parser.parse_args()
+
+        # Initialize configuration
+        config = KmsServerConfig(args.config_file)
+        
+        # Update configuration with command line arguments (they take precedence)
+        config.update_from_args(vars(args))
+        
+        # Update srv_config with values from configuration
+        srv_config.update({
+            'ip': config.get('server', 'ip'),
+            'port': config.get('server', 'port'),
+            'epid': config.get('kms', 'epid'),
+            'lcid': config.get('kms', 'lcid'),
+            'hwid': config.get('kms', 'hwid'),
+            'clientcount': config.get('kms', 'client_count'),
+            'activation': config.get('kms', 'intervals.activation'),
+            'renewal': config.get('kms', 'intervals.renewal'),
+            'timeoutidle': config.get('server', 'timeout.idle'),
+            'timeoutsndrcv': config.get('server', 'timeout.send_receive'),
+            'loglevel': config.get('logging', 'level'),
+            'logfile': config.get('logging', 'file'),
+            'logsize': config.get('logging', 'max_size'),
+            'web_gui': config.get('web_gui', 'enabled'),
+            'web_port': config.get('web_gui', 'port'),
+            'db_type': config.get('database', 'type'),
+            'db_name': config.get('database', 'name'),
+            'db_host': config.get('database', 'host'),
+            'db_user': config.get('database', 'user'),
+            'db_password': config.get('database', 'password'),
+        })
+
+        # Handle additional listeners if configured
+        additional_listeners = config.get('server', 'additional_listeners', [])
+        if additional_listeners:
+            if 'listen' not in srv_config:
+                srv_config['listen'] = []
+            for listener in additional_listeners:
+                srv_config['listen'].append((
+                    listener['address'],
+                    listener['port'],
+                    listener.get('backlog', 5),
+                    listener.get('reuse', True)
+                ))
 
         # Run help if requested, simplifying parser list
-        if any(arg in ["-h", "--help"] for arg in userarg):
+        if any(arg in ["-h", "--help"] for arg in sys.argv[1:]):
              # Simplified help printer without daemon/etrigan subparsers
              KmsParserHelp().printer(
                  parsers=[
@@ -595,23 +650,23 @@ def server_options():
         # No longer need to check for 'etrigan' subparser
 
         # Check for 'connect' subparser presence
-        connect_present = 'connect' in userarg
-        connect_idx = userarg.index('connect') if connect_present else len(userarg)
+        connect_present = 'connect' in sys.argv[1:]
+        connect_idx = sys.argv.index('connect') if connect_present else len(sys.argv)
 
         # Check main server options before 'connect'
         kms_parser_check_optionals(
-            userarg[:connect_idx],
+            sys.argv[:connect_idx],
             pykmssrv_zeroarg,
             pykmssrv_onearg,
             exclude_opt_len=["-F", "--logfile"],
             exclude_opt_dup=["-n", "--listen", "-b", "--backlog", "-u", "--no-reuse"] # Exclude connect options from main check
         )
-        kms_parser_check_positionals(srv_config, server_parser.parse_args, arguments=userarg[:connect_idx], force_parse=True)
+        kms_parser_check_positionals(srv_config, server_parser.parse_args, arguments=sys.argv[:connect_idx], force_parse=True)
 
         # Check 'connect' options if present
         if connect_present:
             kms_parser_check_optionals(
-                userarg[connect_idx:],
+                sys.argv[connect_idx:],
                 connect_zeroarg,
                 connect_onearg,
                 msg="optional connect",
@@ -620,13 +675,13 @@ def server_options():
             kms_parser_check_positionals(
                 srv_config,
                 connection_parser.parse_args,
-                arguments=userarg[connect_idx:],
+                arguments=sys.argv[connect_idx:],
                 msg="positional connect"
             )
 
         # Check connection-related arguments consistency
         kms_parser_check_connect(
-            srv_config, srv_options, userarg, connect_zeroarg, connect_onearg
+            srv_config, srv_options, sys.argv, connect_zeroarg, connect_onearg
         )
 
     except KmsParserException as e:
@@ -708,7 +763,7 @@ def server_check():
         addresses = []
         for elem in srv_config["listen"]:
             try:
-                addr, port = elem.split(",")
+                addr, port = elem[0], elem[1]
             except ValueError:
                 pretty_printer(
                     log_obj=loggersrv.error,

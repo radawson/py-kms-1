@@ -1,0 +1,51 @@
+# py-kms Server Configuration
+
+# Server Network Settings
+server:
+  ip: "0.0.0.0"  # The IP address to listen on (all interfaces)
+  port: 1688  # Default KMS port
+  backlog: 5  # Connection backlog
+  reuse: true  # Allow address reuse
+  dual: false  # IPv6 dual stack support
+  timeout:
+    idle: null  # Maximum inactivity time (seconds)
+    send_receive: null  # Maximum time for send/receive (seconds)
+  additional_listeners: []  # Additional IP:port combinations to listen on
+    # Format: 
+    # - address: "192.168.1.10"
+    #   port: 1688
+    #   backlog: 5
+    #   reuse: true
+
+# KMS Emulator Settings
+kms:
+  epid: null  # Enterprise PID (random if not specified)
+  lcid: 1033  # Locale ID (en-us)
+  hwid: "364F463A8863D35F"  # Hardware ID or "RANDOM"
+  client_count: null  # Minimum clients needed (≥25 for client OS, ≥5 for server/office)
+  intervals:
+    activation: 120  # Minutes between activation attempts
+    renewal: 10080  # Minutes between renewal attempts (7 days)
+
+# Database Settings
+database:
+  type: "sqlite"  # sqlite, mysql, or postgresql
+  name: "sqlite:///pykms_database.db"  # Database name/path
+  host: "localhost"  # Database host (for MySQL/PostgreSQL)
+  user: ""  # Database username
+  password: ""  # Database password
+
+# Web Interface Settings
+web_gui:
+  enabled: false  # Enable web-based GUI
+  port: 8080  # Web interface port
+
+# Logging Configuration
+logging:
+  level: "ERROR"  # CRITICAL, ERROR, WARNING, INFO, DEBUG, MININFO
+  file: "pykms_logserver.log"  # Log file path or special values:
+    # STDOUT - Log to console
+    # FILESTDOUT - Log to both file and console
+    # STDOUTOFF - Disable console output
+    # FILEOFF - Disable file logging
+  max_size: 0  # Maximum log file size in MB (0 = unlimited) 
