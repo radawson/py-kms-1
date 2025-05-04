@@ -19,8 +19,32 @@ server:
 
 # KMS Emulator Settings
 kms:
-  epid: null  # Enterprise PID (random if not specified)
-  lcid: 1033  # Locale ID (en-us)
+  # Enterprise PID (EPID) Configuration
+  # If null, a random EPID will be generated based on the client request
+  # If specified, must match format: XXXXX-XXXXX-XXX-XXXXXX-XX-XXXX-XXXX.0000-XXXXXXX
+  # Where:
+  # - Part 1: Platform ID (5 digits, e.g. 03612)
+  # - Part 2: Group ID (5 digits, e.g. 00206)
+  # - Part 3: Product Key ID Part 1 (3 digits)
+  # - Part 4: Product Key ID Part 2 (6 digits)
+  # - Part 5: License Channel (2 digits, must be 03 for Volume)
+  # - Part 6: Language Code/LCID (4 digits, e.g. 1033 for en-US)
+  # - Part 7: KMS Server OS Build (4 digits + .0000)
+  # - Part 8: Activation Date (3 digits for day + 4 digits for year)
+  # Example: 03612-00206-568-381813-03-1033-14393.0000-2702018
+  epid: null
+  
+  # Language Code ID (LCID)
+  # Used for EPID generation when no EPID is specified
+  # Common values:
+  # - 1033: English - United States (default)
+  # - 1034: Spanish - Spain
+  # - 1036: French - France
+  # - 1031: German - Germany
+  # - 1041: Japanese - Japan
+  # See: https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-lcid/
+  lcid: 1033
+  
   hwid: "364F463A8863D35F"  # Hardware ID or "RANDOM"
   client_count: null  # Minimum clients needed (≥25 for client OS, ≥5 for server/office)
   intervals:

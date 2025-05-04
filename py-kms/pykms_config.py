@@ -3,7 +3,12 @@
 
 import os
 import yaml
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Tuple
+from pykms_Validators import validate_epid, validate_lcid
+
+class ConfigurationError(Exception):
+    """Exception raised for configuration validation errors."""
+    pass
 
 class KmsServerConfig:
     """Configuration manager for py-kms server."""
@@ -24,6 +29,7 @@ class KmsServerConfig:
         self.config_path = config_path
         self.config: Dict[str, Any] = {}
         self.load_config()
+        self.validate_config()
 
     def load_config(self) -> None:
         """Load configuration from file."""
@@ -44,6 +50,47 @@ class KmsServerConfig:
         # If no config found, use default configuration
         self._use_defaults()
 
+    def validate_config(self) -> None:
+        """Validate the loaded configuration.
+        
+        Raises:
+            ConfigurationError: If validation fails
+        """
+        # Validate EPID if specified
+        epid = self.get('kms', 'epid')
+        if epid is not None:
+            is_valid, error = validate_epid(epid)
+            if not is_valid:
+                raise ConfigurationError(f"Invalid EPID configuration: {error}")
+
+        # Validate LCID
+        lcid = self.get('kms', 'lcid')
+        if lcid is not None:
+            is_valid, error = validate_lcid(lcid)
+            if not is_valid:
+                raise ConfigurationError(f"Invalid LCID configuration: {error}")
+
+        # Validate client count
+        client_count = self.get('kms', 'client_count')
+        if client_count is not None:
+            try:
+                count = int(client_count)
+                if count < 0:
+                    raise ConfigurationError("Client count cannot be negative")
+            except ValueError:
+                raise ConfigurationError("Client count must be a number")
+
+        # Validate intervals
+        for interval in ['activation', 'renewal']:
+            value = self.get('kms', f'intervals.{interval}')
+            if value is not None:
+                try:
+                    minutes = int(value)
+                    if minutes < 0:
+                        raise ConfigurationError(f"{interval.title()} interval cannot be negative")
+                except ValueError:
+                    raise ConfigurationError(f"{interval.title()} interval must be a number")
+
     def _load_from_file(self, path: str) -> None:
         """Load configuration from specified YAML file."""
         with open(path, 'r') as f:
@@ -51,7 +98,6 @@ class KmsServerConfig:
 
     def _use_defaults(self) -> None:
         """Load default configuration."""
-        # Load the default config that matches what's in config.yaml
         self.config = {
             'server': {
                 'ip': '0.0.0.0',
@@ -164,6 +210,9 @@ class KmsServerConfig:
                     if section not in self.config:
                         self.config[section] = {}
                     self.config[section][key] = value
+
+        # Validate after updating from args
+        self.validate_config()
 
     def save(self, path: Optional[str] = None) -> None:
         """Save current configuration to file.
