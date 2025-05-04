@@ -155,12 +155,15 @@ class DatabaseBackend:
 
 def create_backend(config):
     """Create database backend based on configuration"""
-    if config.get('db_type') == 'mysql':
+    if config.get('db_type', '').startswith('sqlite:///'):
+        # Extract SQLite path from the connection string
+        db_path = config['db_type'].replace('sqlite:///', '')
+        connection_string = f"sqlite:///{db_path}"
+    elif config.get('db_type') == 'mysql':
         connection_string = f"mysql+pymysql://{config['db_user']}:{config['db_password']}@{config['db_host']}/{config['db_name']}?charset=utf8mb4"
     elif config.get('db_type') == 'postgresql':
         connection_string = f"postgresql://{config['db_user']}:{config['db_password']}@{config['db_host']}/{config['db_name']}"
-    else:  # Default to SQLite
-        db_path = config.get('sqlite_path', 'pykms_database.db')
-        connection_string = f"sqlite:///{db_path}"
+    else:  # Default to SQLite with default path
+        connection_string = "sqlite:///pykms_database.db"
 
     return DatabaseBackend(connection_string) 

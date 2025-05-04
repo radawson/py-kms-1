@@ -7,7 +7,7 @@ Type=simple
 User=pykms # Run as dedicated user
 Group=pykms # Run as dedicated group
 WorkingDirectory=/opt/py-kms  # Set to your project root
-ExecStart=/opt/py-kms/venv/bin/python3 /opt/py-kms/pykms_Server.py -s /opt/py-kms/pykms_database.db -V INFO -wg --web-port 8080 # Add args here if needed
+ExecStart=/opt/py-kms/venv/bin/python3 /opt/py-kms/pykms_Server.py -dt sqlite:///pykms_database.db -V INFO -wg --web-port 8080 # Add args here if needed
 Restart=on-failure
 
 [Install]
