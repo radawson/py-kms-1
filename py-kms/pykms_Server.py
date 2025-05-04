@@ -319,9 +319,14 @@ Use \"STDOUTOFF\" to disable stdout messages. Use \"FILEOFF\" if you not want to
         "des": "web_port",
     },
     "db_type": {
-        "help": "Database backend type (sqlite/mysql/postgresql). For SQLite, specify the database path after sqlite, e.g. 'sqlite:///path/to/db.sqlite'. Default is 'sqlite:///pykms_database.db'.",
-        "def": "sqlite:///pykms_database.db",
+        "help": "Database backend type (sqlite/mysql/postgresql). Default is sqlite.",
+        "def": "sqlite",
         "des": "db_type",
+    },
+    "db_name": {
+        "help": "Database name/path. For SQLite use format 'sqlite:///path/to/db.sqlite'. Default is 'sqlite:///pykms_database.db'.",
+        "def": "sqlite:///pykms_database.db",
+        "des": "db_name",
     },
     "db_host": {
         "help": "Database host for MySQL/PostgreSQL.",
