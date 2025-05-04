@@ -85,7 +85,7 @@
                                 {{ client.licenseStatus }}
                             </span>
                         </td>
-                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ client.lastRequestTime|format_datetime }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>

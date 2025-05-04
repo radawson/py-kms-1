@@ -21,6 +21,7 @@ class UnixTimestamp(TypeDecorator):
     cache_ok = True
 
     def process_bind_param(self, value, dialect):
+        """Convert input value to datetime before storing in database"""
         if value is not None:
             if isinstance(value, (int, float)):
                 return datetime.fromtimestamp(value)
@@ -37,9 +38,23 @@ class UnixTimestamp(TypeDecorator):
         return None
 
     def process_result_value(self, value, dialect):
+        """Convert database value to datetime when retrieving"""
         if value is not None:
+            if isinstance(value, str):
+                try:
+                    return datetime.fromisoformat(value)
+                except ValueError:
+                    return None
             return value
         return None
+
+    def coerce_compared_value(self, op, value):
+        """Handle comparison operations"""
+        if value is None:
+            return self.impl
+        if isinstance(value, (int, float)):
+            return self.impl
+        return self
 
 class Client(Base):
     __tablename__ = 'clients'

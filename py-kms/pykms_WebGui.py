@@ -12,6 +12,18 @@ loggersrv = logging.getLogger('logsrv')
 # Global database backend instance
 db = None
 
+@app.template_filter('format_datetime')
+def format_datetime(value):
+    """Format datetime objects for display"""
+    if value is None:
+        return ''
+    try:
+        if isinstance(value, (int, float)):
+            value = datetime.fromtimestamp(value)
+        return value.strftime('%Y-%m-%d %H:%M:%S')
+    except (ValueError, AttributeError):
+        return str(value)
+
 @app.route('/')
 def index():
     """Dashboard showing activation statistics"""
