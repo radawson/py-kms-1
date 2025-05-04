@@ -116,10 +116,38 @@ def load_config():
         }
 
 def init_web_gui(config):
-    """Initialize the web GUI with configuration"""
-    global db
+    """Initialize the web GUI with the given configuration.
+    
+    Args:
+        config: Dictionary containing web GUI configuration
+    
+    Returns:
+        Flask application instance
+    """
+    # Initialize database
     db = create_backend(config)
-    app.config.update(config)
+    
+    # Configure Flask
+    app.config.update(
+        DATABASE=db,
+        ENV='production',  # Set to production mode
+        DEBUG=False,       # Disable debug mode
+    )
+    
+    # Configure logging to match KMS server format
+    import logging
+    from werkzeug.serving import WSGIRequestHandler
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"  # Reduce logging noise
+    
+    # Disable Werkzeug's default logger
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
+    # Use our own logger for Flask
+    flask_logger = logging.getLogger('logsrv')
+    app.logger.handlers = flask_logger.handlers
+    app.logger.setLevel(flask_logger.level)
+    
     return app
 
 if __name__ == '__main__':

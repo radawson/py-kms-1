@@ -161,14 +161,13 @@ def unshell_message(ansi_string, count):
             elif ansi_value in ExtraMapReversed.keys():
                 msgcolored[tagname]['extra'].append(ExtraMapReversed[ansi_value])
             else:
-                    msgcolored[tagname]['text'] = ansi_value
+                msgcolored[tagname]['text'] = ansi_value
         else:
-                if ansi_value != '\n':
-                        count += 1
-    # Ordering.
-    msgcolored = OrderedDict(sorted(msgcolored.items()))
+            if ansi_value != '\n':
+                count += 1
 
-    return msgcolored, count
+    # Ordering and silently return
+    return OrderedDict(sorted(msgcolored.items())), count
 
 #-------------------------------------------------------------------------------------------------------------------------------------------------------
 # based on: https://ryanjoneil.github.io/posts/2014-02-14-capturing-stdout-in-a-python-child-process.html
