@@ -282,10 +282,10 @@ Default is \"None\" (infinite).",
         "choi": ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "MININFO"],
     },
     "lfile": {
-        "help": "Use this option to set an output log file. The default is \"pykms_logserver.log\". \
-Type \"STDOUT\" to view log info on stdout. Type \"FILESTDOUT\" to combine previous actions. \
-Use \"STDOUTOFF\" to disable stdout messages. Use \"FILEOFF\" if you not want to create logfile.",
-        "def": os.path.join(".", "pykms_logserver.log"),
+        "help": 'Use this option to set an output log file. The default is "pykms_server.log". \
+Type "STDOUT" to view log info on stdout. Type "FILESTDOUT" to combine previous actions. \
+Use "STDOUTOFF" to disable stdout messages. Use "FILEOFF" if you not want to create logfile.',
+        "def": "/opt/py-kms/pykms_server.log",
         "des": "logfile",
     },
     "lsize": {
