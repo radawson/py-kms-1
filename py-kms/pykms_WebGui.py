@@ -3,18 +3,20 @@
 import os
 import logging
 from datetime import datetime
-from flask import Flask, render_template, jsonify, request
+from flask import Flask, render_template, jsonify, request, current_app
 from pykms_Database import create_backend
 
 app = Flask(__name__)
 loggersrv = logging.getLogger('logsrv')
 
 # Global database backend instance
-db = None
 
 @app.route('/')
 def index():
     """Dashboard showing activation statistics"""
+    db = current_app.config['db']
+    if not db:
+        return "Database not initialized", 500
     clients = db.get_all_clients()
     stats = {
         'total_clients': len(clients),
@@ -27,6 +29,9 @@ def index():
 @app.route('/clients')
 def client_list():
     """Client management interface"""
+    db = current_app.config['db']
+    if not db:
+        return "Database not initialized", 500
     clients = db.get_all_clients()
     return render_template('clients.html', clients=clients)
 
@@ -105,8 +110,8 @@ def load_config():
 
 def init_web_gui(config):
     """Initialize the web GUI with configuration"""
-    global db
-    db = create_backend(config)
+    db_instance = create_backend(config)
+    app.config['db'] = db_instance
     app.config.update(config)
     return app
 

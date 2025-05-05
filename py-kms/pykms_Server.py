@@ -782,22 +782,36 @@ def server_check():
             addresses.append((addr, port))
         srv_config["listen"] = addresses
 
-    # Check database configuration
-    if srv_config["db_type"] not in ["sqlite", "mysql", "postgresql"]:
-        pretty_printer(
-            log_obj=loggersrv.error,
-            to_exit=True,
-            put_text="{reverse}{red}{bold}Invalid database type. Must be one of: sqlite, mysql, postgresql{end}"
-        )
-    
-    if srv_config["db_type"] in ["mysql", "postgresql"]:
-        if not srv_config["db_user"] or not srv_config["db_password"]:
+    # Initialize Database Backend if needed
+    srv_config['db_instance'] = None
+    db_enabled = srv_config.get("db_type") is not None and srv_config.get("db_type") != ''
+    if db_enabled:  # Check if db_type is specified and not empty
+        try:
+            from pykms_Database import create_backend
+            db_config = {
+                'db_type': srv_config.get("db_type", 'sqlite'), # Default to sqlite if not present
+                'db_host': srv_config.get("db_host"),
+                'db_name': srv_config.get("db_name"),
+                'db_user': srv_config.get("db_user"),
+                'db_password': srv_config.get("db_password"),
+                'sqlite_path': srv_config.get("sqlite_path", srv_options["sql"]["file"]) # Get sqlite path from config or default
+            }
+            # Use dbname from command line if specified for sqlite
+            if db_config['db_type'] == 'sqlite' and srv_config.get("dbname"): 
+                 db_config['sqlite_path'] = srv_config["dbname"]
+                 
+            srv_config['db_instance'] = create_backend(db_config)
             pretty_printer(
-                log_obj=loggersrv.error,
-                to_exit=True,
-                put_text="{reverse}{red}{bold}Database user and password are required for MySQL/PostgreSQL{end}"
+                 log_obj=loggersrv.info,
+                 put_text="Database backend initialized for main server thread."
             )
-    
+        except Exception as e:
+            pretty_printer(
+                 log_obj=loggersrv.error,
+                 to_exit=True,
+                 put_text="{reverse}{red}{bold}Failed to initialize database backend for main server: %s. Exiting...{end}" % str(e)
+            )
+            
     # Initialize web GUI if enabled
     if srv_config["web_gui"]:
         try:

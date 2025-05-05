@@ -10,12 +10,13 @@ from pykms_Structure import Structure
 from pykms_DB2Dict import kmsDB2Dict
 from pykms_PidGenerator import epidGenerator
 from pykms_Filetimes import filetime_to_dt
-from pykms_Sql import sql_initialize, sql_update, sql_update_epid
-from pykms_Format import justify, byterize, enco, deco, pretty_printer
+from pykms_Misc import logger_create, KmsParserException, KmsParserHelp, kms_parser_get
+from pykms_Format import justify, byterize, enco, deco, pretty_printer, KmsEnum
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------
 
 loggersrv = logging.getLogger('logsrv')
+loggerclt = logging.getLogger('logclt')
 
 class UUID(Structure):
         commonHdr = ()
@@ -254,10 +255,18 @@ could be detected as not genuine !{end}" %currentClientCount)
                         loggersrv.mininfo("", extra = {'host': str(self.srv_config['raddr']),
                                                        'status' : infoDict["licenseStatus"],
                                                        'product' : infoDict["skuId"]})
-                # Create database.
-                if self.srv_config['sqlite']:
-                        sql_initialize(self.srv_config['sqlite'])
-                        sql_update(self.srv_config['sqlite'], infoDict)
+                # Update database.
+                if self.srv_config.get('db_instance'):
+                        try:
+                             self.srv_config['db_instance'].update_client(infoDict)
+                             loggersrv.debug("Database updated for client %s", infoDict["clientMachineId"])
+                        except Exception as e:
+                             loggersrv.error("Failed to update database for client %s: %s", infoDict["clientMachineId"], e, exc_info=True)
+                # else:
+                     # Legacy database handling (commented out)
+                     # if self.srv_config['sqlite']:
+                     #         sql_initialize(self.srv_config['sqlite'])
+                     #         sql_update(self.srv_config['sqlite'], infoDict)
 
                 # *** Log before calling createKmsResponse ***
                 loggersrv.debug("Calling createKmsResponse with currentClientCount: %d", currentClientCount)
@@ -284,9 +293,13 @@ could be detected as not genuine !{end}" %currentClientCount)
                         response['vLActivationInterval'] = self.srv_config.get("activation", 120) # Use .get() and provide defaults
                         response['vLRenewalInterval'] = self.srv_config.get("renewal", 10080)
 
-                        # Update database epid.
-                        if self.srv_config.get('sqlite'):
-                                sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appName)
+                        # Update database if enabled
+                        if self.srv_config.get('db_instance'):
+                                self.srv_config['db_instance'].update_epid(kmsRequest, response, appName)
+                        # else:
+                                # Update legacy sqlite if enabled
+                                # if self.srv_config['sqlite']:
+                                #      sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appName)
 
                         loggersrv.info("Server ePID: %s" % response["kmsEpid"].decode('utf-16le'))
 

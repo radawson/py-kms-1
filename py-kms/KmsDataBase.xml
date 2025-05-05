@@ -883,6 +883,7 @@
 
 			<KmsItem DisplayName="Windows Server 2025" Id="8449b1fb-f0ea-497a-99ab-66ca96e9a0f5" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Windows Server 2025 Datacenter" Id="34e1ae55-27f8-4950-8877-7a03be5fb181" Gvlk="D764K-2NDRG-47T6Q-P8T8W-YP6DF" />
+				<SkuItem DisplayName="Windows Server 2025 Datacenter" Id="c052f164-cdf6-409a-a0cb-853ba0f0f55a" Gvlk="" />
 				<SkuItem DisplayName="Windows Server 2025 Standard" Id="de32eafd-aaee-4662-9444-c1befb41bde2" Gvlk="TVRH6-WHNXV-R9WG3-9XRFY-MY832" />
 				<SkuItem DisplayName="Windows Server 2025 Datacenter: Azure Edition" Id="a99cc1f0-7719-4306-9645-294102fbff95" Gvlk="XGN3F-F394H-FD2MY-PP6FD-8MCRC" />
 			</KmsItem>
