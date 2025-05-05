@@ -5,6 +5,7 @@ import logging
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request, current_app
 from pykms_Database import create_backend
+import yaml # Import yaml
 
 app = Flask(__name__)
 loggersrv = logging.getLogger('logsrv')
@@ -101,24 +102,26 @@ def get_logs():
 
 def save_config(config):
     """Save configuration to file"""
-    import json
-    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
-    with open(config_path, 'w') as f:
-        json.dump(config, f, indent=4)
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
+    try:
+        with open(config_path, 'w') as f:
+            yaml.dump(config, f, default_flow_style=False)
+    except Exception as e:
+        loggersrv.error(f"Error saving config.yaml: {e}")
 
 def load_config():
     """Load configuration from file"""
-    import json
-    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
+    config_path = os.path.join(os.path.dirname(__file__), 'config.yaml')
     try:
         with open(config_path, 'r') as f:
-            return json.load(f)
-    except:
-        return {
-            'db_type': 'sqlite',
-            'sqlite_path': 'pykms_database.db',
-            'web_port': 8080
-        }
+            loaded_config = yaml.safe_load(f)
+            return loaded_config if isinstance(loaded_config, dict) else {}
+    except FileNotFoundError:
+        loggersrv.warning(f"config.yaml not found at {config_path}. Using defaults.")
+        return {}
+    except Exception as e:
+        loggersrv.error(f"Error loading config.yaml: {e}. Using defaults.")
+        return {}
 
 def init_web_gui(config):
     """Initialize the web GUI with the given configuration.
