@@ -136,7 +136,6 @@ def init_web_gui(config):
     
     # Configure Flask
     app.config.update(
-        DATABASE=db,
         ENV='production',  # Set to production mode
         DEBUG=False,       # Disable debug mode
     )
@@ -148,12 +147,15 @@ def init_web_gui(config):
     
     # Disable Werkzeug's default logger
     log = logging.getLogger('werkzeug')
-    log.setLevel(logging.ERROR)
+    # log.setLevel(logging.ERROR) # Don't suppress INFO logs
     
     # Use our own logger for Flask
-    flask_logger = logging.getLogger('logsrv')
+    flask_logger = logging.getLogger('logsrv') 
     app.logger.handlers = flask_logger.handlers
     app.logger.setLevel(flask_logger.level)
+    
+    # Set Werkzeug logger level to match Flask/main logger
+    log.setLevel(flask_logger.level)
     
     """Initialize the web GUI with configuration"""
     db_instance = create_backend(config)
