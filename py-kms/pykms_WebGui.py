@@ -76,7 +76,7 @@ def logs():
 def get_logs():
     """API endpoint for fetching logs"""
     try:
-        logfile = app.config['LOGFILE']
+        logfile = app.config['lfile']
         
         # Handle different logfile configurations
         if isinstance(logfile, list):
