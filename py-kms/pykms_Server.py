@@ -833,12 +833,11 @@ def server_check():
                 'db_user': srv_config["db_user"],
                 'db_password': srv_config["db_password"],
                 'web_port': srv_config["web_port"],
-                'LOGFILE': srv_config["logfile"]
+                'lfile': srv_config["logfile"]
             }
             
             app = init_web_gui(web_config)
-            web_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=srv_config["web_port"]))
-            web_thread.daemon = True
+            web_thread = threading.Thread(target=lambda: app.run(host='0.0.0.0', port=srv_config["web_port"]), daemon=True)
             web_thread.start()
             
             pretty_printer(
