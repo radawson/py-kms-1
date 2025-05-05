@@ -334,11 +334,6 @@ Use \"STDOUTOFF\" to disable stdout messages. Use \"FILEOFF\" if you not want to
         "def": "localhost",
         "des": "db_host",
     },
-    "db_name": {
-        "help": "Database name for MySQL/PostgreSQL.",
-        "def": "pykms",
-        "des": "db_name",
-    },
     "db_user": {
         "help": "Database user for MySQL/PostgreSQL.",
         "def": "",
@@ -804,18 +799,15 @@ def server_check():
     if db_enabled:  # Check if db_type is specified and not empty
         try:
             from pykms_Database import create_backend
+            # Pass only the necessary config keys to create_backend
             db_config = {
-                'db_type': srv_config.get("db_type", 'sqlite'), # Default to sqlite if not present
+                'db_type': srv_config.get("db_type", 'sqlite'), 
                 'db_host': srv_config.get("db_host"),
-                'db_name': srv_config.get("db_name"),
+                'db_name': srv_config.get("db_name"), # This holds the full DSN, e.g., 'sqlite:///path' or 'db_name'
                 'db_user': srv_config.get("db_user"),
                 'db_password': srv_config.get("db_password"),
-                'sqlite_path': srv_config.get("sqlite_path", srv_options["sql"]["file"]) # Get sqlite path from config or default
             }
-            # Use dbname from command line if specified for sqlite
-            if db_config['db_type'] == 'sqlite' and srv_config.get("dbname"): 
-                 db_config['sqlite_path'] = srv_config["dbname"]
-                 
+            
             srv_config['db_instance'] = create_backend(db_config)
             pretty_printer(
                  log_obj=loggersrv.info,

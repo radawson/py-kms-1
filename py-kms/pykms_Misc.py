@@ -109,42 +109,25 @@ def logger_create(log_obj, config, mode = 'a'):
         num_lvl_mininfo = 25
         add_logging_level('MININFO', num_lvl_mininfo)
 
-        # Convert log level string to actual logging level
-        log_level = getattr(logging, config['loglevel'])
+        # --- Start Temporary Debugging --- 
+        # Force file logging to INFO level
+        log_level = logging.INFO
+        log_to_file = True
+        log_filename = os.path.join(".", "pykms_logserver.log")
+        log_to_console = True # Disable console temporarily
+        # --- End Temporary Debugging --- 
 
-        # Determine desired handlers based on config['logfile']
-        log_to_file = False
-        log_to_console = True  # Default to console logging
-        log_filename = None
-
-        if isinstance(config['logfile'], list):
-             # Handle cases like ['FILESTDOUT', 'path/to/file.log'] or ['STDOUTOFF', 'path/to/file.log']
-             log_mode = config['logfile'][0]
-             if len(config['logfile']) > 1:
-                  log_filename = config['logfile'][1]
-             if log_mode == 'FILESTDOUT':
-                  log_to_file = True
-                  log_to_console = True
-             elif log_mode == 'STDOUTOFF':
-                  log_to_file = True
-                  log_to_console = False
-        elif isinstance(config['logfile'], str):
-            log_mode = config['logfile']
-            if log_mode == 'STDOUT':
-                 log_to_console = True
-                 log_to_file = False
-            elif log_mode == 'FILEOFF':
-                 log_to_console = False
-                 log_to_file = False
-            elif log_mode == 'FILE':
-                 log_to_file = True
-                 log_to_console = True
-                 log_filename = log_mode
-            else:
-                 # Treat as filename
-                 log_to_file = True
-                 log_to_console = True
-                 log_filename = log_mode
+        # Determine desired handlers based on config['logfile'] - ## COMMENTED OUT ##
+        # log_to_file = False
+        # log_to_console = True  # Default to console logging
+        # log_filename = None
+        # ... (rest of the original handler determination logic commented out) ...
+        # if isinstance(config['logfile'], list):
+        #      ...
+        # elif isinstance(config['logfile'], str):
+        #      ...
+        # else:
+        #      ...
 
         # Configure formatters
         try:
@@ -193,15 +176,19 @@ def logger_create(log_obj, config, mode = 'a'):
                 file_handler.setLevel(log_level)
                 file_handler.setFormatter(file_formatter)
                 log_obj.addHandler(file_handler)
+                # --- Start Temporary Debugging ---
+                file_handler.flush() # Explicitly flush
+                log_obj.info("--- Logger Initialized (Forced File Mode) ---") # Test message
+                # --- End Temporary Debugging ---
             except Exception as e:
                 print(f"Error setting up file logging: {e}", file=sys.stderr)
-                log_to_console = True  # Fallback to console logging
+                # log_to_console = True  # Fallback to console logging (disabled for now)
 
-        if log_to_console:
-            console_handler = logging.StreamHandler(sys.stdout)
-            console_handler.setLevel(log_level)
-            console_handler.setFormatter(console_formatter)
-            log_obj.addHandler(console_handler)
+        # if log_to_console: ## COMMENTED OUT ##
+        #    console_handler = logging.StreamHandler(sys.stdout)
+        #    console_handler.setLevel(log_level)
+        #    console_handler.setFormatter(console_formatter)
+        #    log_obj.addHandler(console_handler)
 
         if not log_to_file and not log_to_console:
             # Add NullHandler if both file and console are off
