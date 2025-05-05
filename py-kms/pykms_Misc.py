@@ -112,39 +112,16 @@ def logger_create(log_obj, config, mode = 'a'):
         # Convert log level string to actual logging level
         log_level = getattr(logging, config['loglevel'])
 
-        # Determine desired handlers based on config['logfile']
-        log_to_file = False
-        log_to_console = True  # Default to console logging
-        log_filename = None
+        # --- Debug Print (Keep temporarily) --- 
+        import sys
+        print(f"DEBUG logger_create: config['logfile'] = {config.get('logfile')}, type = {type(config.get('logfile'))}", file=sys.stderr)
+        print(f"DEBUG logger_create: config['log_to_console'] = {config.get('log_to_console')}, type = {type(config.get('log_to_console'))}", file=sys.stderr)
+        # --- End Debug Print ---
 
-        if isinstance(config['logfile'], list):
-             # Handle cases like ['FILESTDOUT', 'path/to/file.log'] or ['STDOUTOFF', 'path/to/file.log']
-             log_mode = config['logfile'][0]
-             if len(config['logfile']) > 1:
-                  log_filename = config['logfile'][1]
-             if log_mode == 'FILESTDOUT':
-                  log_to_file = True
-                  log_to_console = True
-             elif log_mode == 'STDOUTOFF':
-                  log_to_file = True
-                  log_to_console = False
-        elif isinstance(config['logfile'], str):
-            log_mode = config['logfile']
-            if log_mode == 'STDOUT':
-                 log_to_console = True
-                 log_to_file = False
-            elif log_mode == 'FILEOFF':
-                 log_to_console = False
-                 log_to_file = False
-            elif log_mode == 'FILE':
-                 log_to_file = True
-                 log_to_console = True # Assuming console is desired with FILE mode
-                 log_filename = log_mode
-            else:
-                 # Treat as filename
-                 log_to_file = True
-                 log_to_console = True # Assuming console is desired with file mode
-                 log_filename = log_mode
+        # Simplified handler determination
+        log_filename = config.get('logfile')
+        log_to_console = config.get('log_to_console', True) # Default to True if not set
+        log_to_file = bool(log_filename) # Enable file logging if path is provided
 
         # Configure formatters
         try:
@@ -179,37 +156,39 @@ def logger_create(log_obj, config, mode = 'a'):
         # Set the main logger level *before* adding handlers
         log_obj.setLevel(log_level)
 
-        # Create and add handlers
-        if log_to_file and log_filename:
-            log_obj.info(f"Attempting to set up file handler for: {log_filename}") # Added info message
+        # Create and add handlers based on simplified flags
+        handlers_added = False
+        if log_to_file:
+            # log_obj.info(f"Attempting to set up file handler for: {log_filename}") # Removed old debug
             try:
                 # Ensure directory exists
                 log_dir = os.path.dirname(log_filename)
                 if log_dir and not os.path.exists(log_dir):
                     os.makedirs(log_dir)
                 
-                # Create file handler with proper level
                 file_handler = logging.handlers.RotatingFileHandler(
                     filename=log_filename,
                     mode=mode,
-                    maxBytes=int(config['logsize'] * 1024 * 512) if config['logsize'] else 0,
+                    maxBytes=int(config.get('logsize', 0) * 1024 * 512) if config.get('logsize') else 0,
                     backupCount=1
                 )
                 file_handler.setLevel(log_level)
                 file_handler.setFormatter(file_formatter)
                 log_obj.addHandler(file_handler)
+                handlers_added = True
             except Exception as e:
-                print(f"Error setting up file logging: {e}", file=sys.stderr)
-                log_to_console = True  # Fallback to console logging
+                print(f"Error setting up file logging to '{log_filename}': {e}", file=sys.stderr)
+                # Don't fallback to console here, let the console flag decide
 
         if log_to_console:
            console_handler = logging.StreamHandler(sys.stdout)
            console_handler.setLevel(log_level)
            console_handler.setFormatter(console_formatter)
            log_obj.addHandler(console_handler)
+           handlers_added = True
 
-        if not log_to_file and not log_to_console:
-            # Add NullHandler if both file and console are off
+        if not handlers_added:
+            # Add NullHandler if both file and console are effectively off
             log_obj.addHandler(logging.NullHandler())
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -232,32 +211,6 @@ def check_dir(path, where, log_obj = None, argument = '-F/--logfile', typefile =
         elif not extension.lower() == typefile:
                 pretty_printer(log_obj = log_obj, where = where, to_exit = True,
                                put_text = msg_fil %(argument, typefile, extension))
-
-def check_logfile(optionlog, defaultlog, where):
-        if not isinstance(optionlog, list):
-                optionlog = [optionlog]
-
-        lenopt = len(optionlog)
-        msg_long = "{reverse}{red}{bold}argument `-F/--logfile`: too much arguments. Exiting...{end}"
-
-        if lenopt > 2:
-                pretty_printer(put_text = msg_long, where = where, to_exit = True)
-
-        if (any(opt in ['FILESTDOUT', 'STDOUTOFF'] for opt in optionlog)):
-                if lenopt == 1:
-                        # add default logfile.
-                        optionlog.append(defaultlog)
-                elif lenopt == 2:
-                        # check directory path.
-                        check_dir(optionlog[1], where)
-        else:
-                if lenopt == 2:
-                        pretty_printer(put_text = msg_long, where = where, to_exit = True)
-                elif lenopt == 1 and (any(opt not in ['STDOUT', 'FILEOFF'] for opt in optionlog)):
-                        # check directory path.
-                        check_dir(optionlog[0], where)
-
-        return optionlog
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -507,36 +460,58 @@ def check_setup(config, options, logger, where):
         # 'None'--> None.
         proper_none(config)
 
-        # Check logfile.
-        config['logfile'] = check_logfile(config['logfile'], options['lfile']['def'], where = where)
+        # Check logfile path if specified
+        if config.get('logfile'):
+             try:
+                  # Basic check: can we get the directory name?
+                  log_dir = os.path.dirname(config['logfile'])
+                  # Optional: Add more robust checks like os.access(log_dir, os.W_OK)
+                  # if log_dir and not os.access(log_dir, os.W_OK):
+                  #    raise PermissionError(f"No write access to log directory: {log_dir}")
+             except Exception as e:
+                  pretty_printer(log_obj = logger.error, where = where, to_exit = True,
+                               put_text = f"{{reverse}}{{red}}{{bold}}Invalid logfile path '{config['logfile']}': {e}. Exiting...{{end}}")
+
+        # Removed call to check_logfile
+        # config['logfile'] = check_logfile(config['logfile'], options['lfile']['def'], where = where)
 
         # Check logsize (py-kms Gui).
-        if config['logsize'] == "":
-                if any(opt in ['STDOUT', 'FILEOFF'] for opt in config['logfile']):
-                        # set a recognized size never used.
-                        config['logsize'] = 0
-                else:
-                        pretty_printer(put_text = "{reverse}{red}{bold}argument `-S/--logsize`: invalid with: '%s'. Exiting...{end}" %config['logsize'],
-                                       where = where, to_exit = True)
+        if config.get('logsize') == "":
+            # Original logic seemed flawed, let's simplify:
+            # If logsize is explicitly empty string, treat as 0 (disabled)
+            config['logsize'] = 0 
+        elif config.get('logsize') is not None:
+             try:
+                 # Ensure it's a valid float/int >= 0
+                 size_mb = float(config['logsize'])
+                 if size_mb < 0:
+                      raise ValueError("Log size cannot be negative")
+                 config['logsize'] = size_mb
+             except (ValueError, TypeError):
+                  pretty_printer(put_text = f"{{reverse}}{{red}}{{bold}}argument `-S/--logsize`: invalid value: '{config['logsize']}'. Must be a non-negative number. Exiting...{{end}}",
+                                where = where, to_exit = True)
+        else:
+             # If None from config/default, treat as 0
+             config['logsize'] = 0
 
         # Check loglevel (py-kms Gui).
-        if config['loglevel'] == "":
+        if config.get('loglevel') == "":
                 # set a recognized level never used.
                 config['loglevel'] = 'ERROR'
+        
+        # Ensure log_to_console exists, default to True
+        if 'log_to_console' not in config:
+            config['log_to_console'] = True
 
-        # Setup hidden messages.
-        hidden = ['STDOUT', 'FILESTDOUT', 'STDOUTOFF']
-        view_flag = (False if any(opt in hidden for opt in config['logfile']) else True)
+        # Setup hidden messages - This seems related to GUI, keeping for now
+        # but its logic might need review depending on GUI interaction
+        view_flag = config.get('log_to_console', True)
         if where == 'srv':
                 ShellMessage.viewsrv = view_flag
-                # Remove asyncmsg assignment as it's no longer configured
-                # ShellMessage.asyncmsgsrv = config['asyncmsg']
         elif where == 'clt':
                 ShellMessage.viewclt = view_flag
-                # Remove asyncmsg assignment as it's no longer configured
-                # ShellMessage.asyncmsgclt = config['asyncmsg']
 
-        # Create log.
+        # Create log
         logger_create(logger, config, mode = 'a')
 
         # Check port.

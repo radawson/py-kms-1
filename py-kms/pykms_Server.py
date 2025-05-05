@@ -462,6 +462,13 @@ def server_options():
         type=str,
     )
     server_parser.add_argument(
+        "--no-console",
+        action="store_true",
+        dest="no_console",
+        default=False,
+        help="Disable logging to console (stdout).",
+    )
+    server_parser.add_argument(
         "-S",
         "--logsize",
         action="store",
@@ -615,6 +622,7 @@ def server_options():
             'loglevel': config.get('logging', 'level'),
             'logfile': config.get('logging', 'file'),
             'logsize': config.get('logging', 'max_size'),
+            'log_to_console': config.get('logging', 'console', True),
             'web_gui': config.get('web_gui', 'enabled'),
             'web_port': config.get('web_gui', 'port'),
             'db_type': config.get('database', 'type'),
@@ -623,6 +631,18 @@ def server_options():
             'db_user': config.get('database', 'user'),
             'db_password': config.get('database', 'password'),
         })
+
+        # Override logfile and console settings from command line if provided
+        if args.logfile is not None:
+            srv_config['logfile'] = args.logfile
+        if args.no_console:
+            srv_config['log_to_console'] = False
+        # Ensure loglevel from args overrides config file if specified
+        if args.loglevel != srv_options['llevel']['def']:
+             srv_config['loglevel'] = args.loglevel
+        # Ensure logsize from args overrides config file if specified
+        if args.logsize != srv_options['lsize']['def']:
+             srv_config['logsize'] = args.logsize
 
         # Handle additional listeners if configured
         additional_listeners = config.get('server', 'additional_listeners', [])

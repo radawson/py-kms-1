@@ -180,7 +180,7 @@ class KmsServerConfig:
             },
             'logging': {
                 'level': 'ERROR',
-                'file': 'pykms_logserver.log',
+                'file': 'pykms_server.log',
                 'max_size': 0
             }
         }
