@@ -112,10 +112,10 @@ def logger_create(log_obj, config, mode = 'a'):
         # Convert log level string to actual logging level
         log_level = getattr(logging, config['loglevel'])
 
-        # --- Debug Print (Keep temporarily) --- 
-        import sys
-        print(f"DEBUG logger_create: config['logfile'] = {config.get('logfile')}, type = {type(config.get('logfile'))}", file=sys.stderr)
-        print(f"DEBUG logger_create: config['log_to_console'] = {config.get('log_to_console')}, type = {type(config.get('log_to_console'))}", file=sys.stderr)
+        # --- Debug Print (Removed) --- 
+        # import sys
+        # print(f"DEBUG logger_create: config['logfile'] = {config.get('logfile')}, type = {type(config.get('logfile'))}", file=sys.stderr)
+        # print(f"DEBUG logger_create: config['log_to_console'] = {config.get('log_to_console')}, type = {type(config.get('log_to_console'))}", file=sys.stderr)
         # --- End Debug Print ---
 
         # Simplified handler determination
