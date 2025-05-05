@@ -11,7 +11,7 @@ from pykms_DB2Dict import kmsDB2Dict
 from pykms_PidGenerator import epidGenerator
 from pykms_Filetimes import filetime_to_dt
 from pykms_Misc import logger_create, KmsParserException, KmsParserHelp, kms_parser_get
-from pykms_Format import justify, byterize, enco, deco, pretty_printer, KmsEnum
+from pykms_Format import justify, byterize, enco, deco, pretty_printer
 
 #--------------------------------------------------------------------------------------------------------------------------------------------------------
 
