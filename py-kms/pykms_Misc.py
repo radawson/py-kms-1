@@ -174,11 +174,14 @@ def logger_create(log_obj, config, mode = 'a'):
         console_formatter = LevelFormatter(console_formats, color=True)
 
         # Clear old handlers
-        if log_obj.handlers:
-                log_obj.handlers = []
+        log_obj.handlers = []
+
+        # Set the main logger level *before* adding handlers
+        log_obj.setLevel(log_level)
 
         # Create and add handlers
         if log_to_file and log_filename:
+            log_obj.info(f"Attempting to set up file handler for: {log_filename}") # Added info message
             try:
                 # Ensure directory exists
                 log_dir = os.path.dirname(log_filename)
@@ -208,9 +211,6 @@ def logger_create(log_obj, config, mode = 'a'):
         if not log_to_file and not log_to_console:
             # Add NullHandler if both file and console are off
             log_obj.addHandler(logging.NullHandler())
-
-        # Set the main logger level
-        log_obj.setLevel(log_level)
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------
 def check_dir(path, where, log_obj = None, argument = '-F/--logfile', typefile = '.log'):
