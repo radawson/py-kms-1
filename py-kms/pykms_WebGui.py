@@ -11,6 +11,18 @@ loggersrv = logging.getLogger('logsrv')
 
 # Global database backend instance
 
+@app.template_filter('format_datetime')
+def format_datetime(value):
+    """Format datetime objects for display"""
+    if value is None:
+        return ''
+    try:
+        if isinstance(value, (int, float)):
+            value = datetime.fromtimestamp(value)
+        return value.strftime('%Y-%m-%d %H:%M:%S')
+    except (ValueError, AttributeError):
+        return str(value)
+
 @app.route('/')
 def index():
     """Dashboard showing activation statistics"""
@@ -109,6 +121,40 @@ def load_config():
         }
 
 def init_web_gui(config):
+    """Initialize the web GUI with the given configuration.
+    
+    Args:
+        config: Dictionary containing web GUI configuration
+    
+    Returns:
+        Flask application instance
+    """
+    # Initialize database
+    db_instance = create_backend(config)
+    app.config['db'] = db_instance
+    app.config.update(config)
+    
+    # Configure Flask
+    app.config.update(
+        DATABASE=db,
+        ENV='production',  # Set to production mode
+        DEBUG=False,       # Disable debug mode
+    )
+    
+    # Configure logging to match KMS server format
+    import logging
+    from werkzeug.serving import WSGIRequestHandler
+    WSGIRequestHandler.protocol_version = "HTTP/1.1"  # Reduce logging noise
+    
+    # Disable Werkzeug's default logger
+    log = logging.getLogger('werkzeug')
+    log.setLevel(logging.ERROR)
+    
+    # Use our own logger for Flask
+    flask_logger = logging.getLogger('logsrv')
+    app.logger.handlers = flask_logger.handlers
+    app.logger.setLevel(flask_logger.level)
+    
     """Initialize the web GUI with configuration"""
     db_instance = create_backend(config)
     app.config['db'] = db_instance

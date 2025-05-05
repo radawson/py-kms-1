@@ -30,8 +30,9 @@ from pykms_Misc import (
 )
 from pykms_Format import enco, deco, pretty_printer, justify
 from pykms_Connect import MultipleListener
+from pykms_config import KmsServerConfig
 
-srv_version = "py-kms_2020-10-01"
+srv_version = "py-kms_2025-05-03"
 __license__ = "The Unlicense"
 __author__ = "Matteo ℱan <SystemRage@protonmail.com>"
 __url__ = "https://github.com/SystemRage/py-kms"
@@ -256,39 +257,34 @@ for server OSes and Office >=5",
         "def": 1440 * 7,
         "des": "renewal",
     },
-    "sql": {
-        "help": 'Use this option to store request information from unique clients in an SQLite database. Deactivated by default. \
-If enabled the default .db file is "pykms_database.db". You can also provide a specific location.',
-        "def": False,
-        "file": os.path.join(".", "pykms_database.db"),
-        "des": "sqlite",
-    },
     "hwid": {
-        "help": 'Use this option to specify a HWID. The HWID must be an 16-character string of hex characters. \
-The default is "364F463A8863D35F" or type "RANDOM" to auto generate the HWID.',
+        "help": "Use this option to specify a HWID. The HWID must be an 16-character string of hex characters. \
+The default is \"364F463A8863D35F\" or type \"RANDOM\" to auto generate the HWID.",
         "def": "364F463A8863D35F",
         "des": "hwid",
     },
     "time0": {
-        "help": 'Maximum inactivity time (in seconds) after which the connection with the client is closed. If "None" (default) serve forever.',
+        "help": "Use this option to specify the maximum inactivity time (in seconds) after which the client disconnects. \
+Default is \"None\" (infinite).",
         "def": None,
         "des": "timeoutidle",
     },
     "time1": {
-        "help": "Set the maximum time to wait for sending / receiving a request / response. Default is no timeout.",
+        "help": "Use this option to specify the maximum time (in seconds) to wait for a client request. \
+Default is \"None\" (infinite).",
         "def": None,
         "des": "timeoutsndrcv",
     },
     "llevel": {
-        "help": 'Use this option to set a log level. The default is "ERROR".',
+        "help": "Use this option to set a log level. The default is \"ERROR\".",
         "def": "ERROR",
         "des": "loglevel",
         "choi": ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG", "MININFO"],
     },
     "lfile": {
-        "help": 'Use this option to set an output log file. The default is "pykms_logserver.log". \
-Type "STDOUT" to view log info on stdout. Type "FILESTDOUT" to combine previous actions. \
-Use "STDOUTOFF" to disable stdout messages. Use "FILEOFF" if you not want to create logfile.',
+        "help": "Use this option to set an output log file. The default is \"pykms_logserver.log\". \
+Type \"STDOUT\" to view log info on stdout. Type \"FILESTDOUT\" to combine previous actions. \
+Use \"STDOUTOFF\" to disable stdout messages. Use \"FILEOFF\" if you not want to create logfile.",
         "def": os.path.join(".", "pykms_logserver.log"),
         "des": "logfile",
     },
@@ -297,17 +293,14 @@ Use "STDOUTOFF" to disable stdout messages. Use "FILEOFF" if you not want to cre
         "def": 0,
         "des": "logsize",
     },
-    "listen": {
-        "help": "Adds multiple listening ip address - port couples.",
-        "des": "listen",
-    },
+    "listen": {"help": "Adds an IP address and port to listen on.", "def": [], "des": "listen"},
     "backlog": {
-        "help": 'Specifies the maximum length of the queue of pending connections. Default is "5".',
+        "help": "Sets the backlog for the server. Default is 5.",
         "def": 5,
         "des": "backlog",
     },
     "reuse": {
-        "help": "Do not allows binding / listening to the same address and port. Reusing port is activated by default.",
+        "help": "Allows/Disallows address reuse. Default is True.",
         "def": True,
         "des": "reuse",
     },
@@ -330,6 +323,11 @@ Use "STDOUTOFF" to disable stdout messages. Use "FILEOFF" if you not want to cre
         "help": "Database backend type (sqlite/mysql/postgresql). Default is sqlite.",
         "def": "sqlite",
         "des": "db_type",
+    },
+    "db_name": {
+        "help": "Database name/path. For SQLite use format 'sqlite:///path/to/db.sqlite'. Default is 'sqlite:///pykms_database.db'.",
+        "def": "sqlite:///pykms_database.db",
+        "des": "db_name",
     },
     "db_host": {
         "help": "Database host for MySQL/PostgreSQL.",
@@ -358,11 +356,13 @@ def server_options():
     server_parser = KmsParser(
         description=srv_description, epilog="version: " + srv_version, add_help=False
     )
+    
+    # Make IP and port optional when using config file
     server_parser.add_argument(
         "ip",
         nargs="?",
         action="store",
-        default=srv_options["ip"]["def"],
+        default=None,  # Changed from srv_options["ip"]["def"]
         help=srv_options["ip"]["help"],
         type=str,
     )
@@ -370,7 +370,7 @@ def server_options():
         "port",
         nargs="?",
         action="store",
-        default=srv_options["port"]["def"],
+        default=None,  # Changed from srv_options["port"]["def"]
         help=srv_options["port"]["help"],
         type=int,
     )
@@ -418,16 +418,6 @@ def server_options():
         default=srv_options["renewal"]["def"],
         help=srv_options["renewal"]["help"],
         type=int,
-    )
-    server_parser.add_argument(
-        "-s",
-        "--sqlite",
-        nargs="?",
-        dest=srv_options["sql"]["des"],
-        const=True,
-        default=srv_options["sql"]["def"],
-        help=srv_options["sql"]["help"],
-        type=str,
     )
     server_parser.add_argument(
         "-w",
@@ -485,9 +475,75 @@ def server_options():
         help=srv_options["lsize"]["help"],
         type=float,
     )
-
+    server_parser.add_argument(
+        "-wg",
+        "--web-gui",
+        action="store_true",
+        dest=srv_options["web_gui"]["des"],
+        default=srv_options["web_gui"]["def"],
+        help=srv_options["web_gui"]["help"]
+    )
+    server_parser.add_argument(
+        "-wp",
+        "--web-port",
+        action="store",
+        dest=srv_options["web_port"]["des"],
+        default=srv_options["web_port"]["def"],
+        help=srv_options["web_port"]["help"],
+        type=int
+    )
+    server_parser.add_argument(
+        "-dt",
+        "--db-type",
+        action="store",
+        dest=srv_options["db_type"]["des"],
+        default=srv_options["db_type"]["def"],
+        help=srv_options["db_type"]["help"]
+    )
+    server_parser.add_argument(
+        "-dh",
+        "--db-host",
+        action="store",
+        dest=srv_options["db_host"]["des"],
+        default=srv_options["db_host"]["def"],
+        help=srv_options["db_host"]["help"]
+    )
+    server_parser.add_argument(
+        "-dn",
+        "--db-name",
+        action="store",
+        dest=srv_options["db_name"]["des"],
+        default=srv_options["db_name"]["def"],
+        help=srv_options["db_name"]["help"]
+    )
+    server_parser.add_argument(
+        "-du",
+        "--db-user",
+        action="store",
+        dest=srv_options["db_user"]["des"],
+        default=srv_options["db_user"]["def"],
+        help=srv_options["db_user"]["help"]
+    )
+    server_parser.add_argument(
+        "-dp",
+        "--db-password",
+        action="store",
+        dest=srv_options["db_password"]["des"],
+        default=srv_options["db_password"]["def"],
+        help=srv_options["db_password"]["help"]
+    )
     server_parser.add_argument(
         "-h", "--help", action="help", help="show this help message and exit"
+    )
+
+    # Add new argument for config file
+    server_parser.add_argument(
+        "-cf", "--config-file",
+        action="store",
+        dest="config_file",
+        default=None,
+        help="Path to configuration file. If not specified, will search in default locations.",
+        type=str
     )
 
     ## Connection parsing.
@@ -531,110 +587,91 @@ def server_options():
         help=srv_options["dual"]["help"],
     )
 
-    # Add new command line arguments
-    server_parser.add_argument(
-        "-wg",
-        "--web-gui",
-        action="store_true",
-        dest=srv_options["web_gui"]["des"],
-        default=srv_options["web_gui"]["def"],
-        help=srv_options["web_gui"]["help"]
-    )
-    
-    server_parser.add_argument(
-        "-wp",
-        "--web-port",
-        action="store",
-        dest=srv_options["web_port"]["des"],
-        default=srv_options["web_port"]["def"],
-        help=srv_options["web_port"]["help"],
-        type=int
-    )
-    
-    server_parser.add_argument(
-        "-dt",
-        "--db-type",
-        action="store",
-        dest=srv_options["db_type"]["des"],
-        choices=["sqlite", "mysql", "postgresql"],
-        default=srv_options["db_type"]["def"],
-        help=srv_options["db_type"]["help"]
-    )
-    
-    server_parser.add_argument(
-        "-dh",
-        "--db-host",
-        action="store",
-        dest=srv_options["db_host"]["des"],
-        default=srv_options["db_host"]["def"],
-        help=srv_options["db_host"]["help"]
-    )
-    
-    server_parser.add_argument(
-        "-dn",
-        "--db-name",
-        action="store",
-        dest=srv_options["db_name"]["des"],
-        default=srv_options["db_name"]["def"],
-        help=srv_options["db_name"]["help"]
-    )
-    
-    server_parser.add_argument(
-        "-du",
-        "--db-user",
-        action="store",
-        dest=srv_options["db_user"]["des"],
-        default=srv_options["db_user"]["def"],
-        help=srv_options["db_user"]["help"]
-    )
-    
-    server_parser.add_argument(
-        "-dp",
-        "--db-password",
-        action="store",
-        dest=srv_options["db_password"]["des"],
-        default=srv_options["db_password"]["def"],
-        help=srv_options["db_password"]["help"]
-    )
-
     try:
-        userarg = sys.argv[1:]
+        # Parse command line arguments first
+        args = server_parser.parse_args()
 
-        # Run help if requested, simplifying parser list
-        if any(arg in ["-h", "--help"] for arg in userarg):
-             # Simplified help printer without daemon/etrigan subparsers
-             KmsParserHelp().printer(
-                 parsers=[
-                     server_parser,
-                     (connection_parser, connect_parser), # Keep connection options relevant
-                 ]
-             )
+        # Initialize configuration
+        config = KmsServerConfig(args.config_file)
+        
+        # Update configuration with command line arguments (they take precedence)
+        args_dict = vars(args)
+        
+        # Only update IP/port from args if explicitly provided
+        if args.ip is not None:
+            args_dict['ip'] = args.ip
+        if args.port is not None:
+            args_dict['port'] = args.port
+            
+        config.update_from_args(args_dict)
+        
+        # Update srv_config with values from configuration
+        srv_config.update({
+            'ip': config.get('server', 'ip'),
+            'port': config.get('server', 'port'),
+            'epid': config.get('kms', 'epid'),
+            'lcid': config.get('kms', 'lcid'),
+            'hwid': config.get('kms', 'hwid'),
+            'clientcount': config.get('kms', 'client_count'),
+            'activation': config.get('kms', 'intervals.activation'),
+            'renewal': config.get('kms', 'intervals.renewal'),
+            'timeoutidle': config.get('server', 'timeout.idle'),
+            'timeoutsndrcv': config.get('server', 'timeout.send_receive'),
+            'loglevel': config.get('logging', 'level'),
+            'logfile': config.get('logging', 'file'),
+            'logsize': config.get('logging', 'max_size'),
+            'web_gui': config.get('web_gui', 'enabled'),
+            'web_port': config.get('web_gui', 'port'),
+            'db_type': config.get('database', 'type'),
+            'db_name': config.get('database', 'name'),
+            'db_host': config.get('database', 'host'),
+            'db_user': config.get('database', 'user'),
+            'db_password': config.get('database', 'password'),
+        })
+
+        # Handle additional listeners if configured
+        additional_listeners = config.get('server', 'additional_listeners', [])
+        if additional_listeners:
+            if 'listen' not in srv_config:
+                srv_config['listen'] = []
+            for listener in additional_listeners:
+                srv_config['listen'].append((
+                    listener['address'],
+                    listener['port'],
+                    listener.get('backlog', 5),
+                    listener.get('reuse', True)
+                ))
+
+        # Run help if requested
+        if any(arg in ["-h", "--help"] for arg in sys.argv[1:]):
+            KmsParserHelp().printer(
+                parsers=[
+                    server_parser,
+                    (connection_parser, connect_parser),
+                ]
+            )
 
         # Get stored arguments for server and connection options
         pykmssrv_zeroarg, pykmssrv_onearg = kms_parser_get(server_parser)
         connect_zeroarg, connect_onearg = kms_parser_get(connect_parser)
 
-        # Simplified argument checking logic
-        # No longer need to check for 'etrigan' subparser
-
         # Check for 'connect' subparser presence
-        connect_present = 'connect' in userarg
-        connect_idx = userarg.index('connect') if connect_present else len(userarg)
+        connect_present = 'connect' in sys.argv[1:]
+        connect_idx = sys.argv.index('connect') if connect_present else len(sys.argv)
 
         # Check main server options before 'connect'
         kms_parser_check_optionals(
-            userarg[:connect_idx],
+            sys.argv[:connect_idx],
             pykmssrv_zeroarg,
             pykmssrv_onearg,
             exclude_opt_len=["-F", "--logfile"],
-            exclude_opt_dup=["-n", "--listen", "-b", "--backlog", "-u", "--no-reuse"] # Exclude connect options from main check
+            exclude_opt_dup=["-n", "--listen", "-b", "--backlog", "-u", "--no-reuse"]
         )
-        kms_parser_check_positionals(srv_config, server_parser.parse_args, arguments=userarg[:connect_idx], force_parse=True)
 
         # Check 'connect' options if present
         if connect_present:
             kms_parser_check_optionals(
-                userarg[connect_idx:],
+                sys.argv[connect_idx:],
                 connect_zeroarg,
                 connect_onearg,
                 msg="optional connect",
@@ -643,18 +680,19 @@ def server_options():
             kms_parser_check_positionals(
                 srv_config,
                 connection_parser.parse_args,
-                arguments=userarg[connect_idx:],
+                arguments=sys.argv[connect_idx:],
                 msg="positional connect"
             )
 
         # Check connection-related arguments consistency
         kms_parser_check_connect(
-            srv_config, srv_options, userarg, connect_zeroarg, connect_onearg
+            srv_config, srv_options, sys.argv, connect_zeroarg, connect_onearg
         )
 
     except KmsParserException as e:
         pretty_printer(
-            put_text="{reverse}{red}{bold}%s. Exiting...{end}" % str(e), to_exit=True
+            put_text="{reverse}{red}{bold}%s. Exiting...{end}" % str(e),
+            to_exit=True
         )
 
 
@@ -713,28 +751,6 @@ def server_check():
     # Check LCID.
     srv_config["lcid"] = check_lcid(srv_config["lcid"], loggersrv.warning)
 
-    # Check sqlite.
-    if srv_config["sqlite"]:
-        if isinstance(srv_config["sqlite"], str):
-            check_dir(
-                srv_config["sqlite"],
-                "srv",
-                log_obj=loggersrv.error,
-                argument="-s/--sqlite",
-                typefile=".db",
-            )
-        elif srv_config["sqlite"] is True:
-            srv_config["sqlite"] = srv_options["sql"]["file"]
-
-        try:
-            import sqlite3
-        except ImportError:
-            pretty_printer(
-                log_obj=loggersrv.warning,
-                put_text="{reverse}{yellow}{bold}Module 'sqlite3' not installed, database support disabled.{end}",
-            )
-            srv_config["sqlite"] = False
-
     # Check other specific server options.
     opts = [
         ("clientcount", "-c/--client-count"),
@@ -753,7 +769,7 @@ def server_check():
         addresses = []
         for elem in srv_config["listen"]:
             try:
-                addr, port = elem.split(",")
+                addr, port = elem[0], elem[1]
             except ValueError:
                 pretty_printer(
                     log_obj=loggersrv.error,

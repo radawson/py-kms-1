@@ -85,7 +85,7 @@
                                 {{ client.licenseStatus }}
                             </span>
                         </td>
-                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ client.lastRequestTime|format_datetime }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -98,13 +98,18 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var windowsClients = Number({{ stats.windows_clients }});
+    var officeClients = Number({{ stats.office_clients }});
+    var activeClients = Number({{ stats.active_clients }});
+    var totalClients = Number({{ stats.total_clients }});
+
     // Client Distribution Chart
     new Chart(document.getElementById('clientDistributionChart'), {
         type: 'pie',
         data: {
             labels: ['Windows Clients', 'Office Clients'],
             datasets: [{
-                data: [{{ stats.windows_clients }}, {{ stats.office_clients }}],
+                data: [windowsClients, officeClients],
                 backgroundColor: ['#0dcaf0', '#ffc107']
             }]
         }
@@ -117,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Licensed', 'Unlicensed'],
             datasets: [{
                 label: 'Number of Clients',
-                data: [{{ stats.active_clients }}, {{ stats.total_clients - stats.active_clients }}],
+                data: [activeClients, totalClients - activeClients],
                 backgroundColor: ['#198754', '#dc3545']
             }]
         },

@@ -72,6 +72,12 @@ setup_ubuntu(){
   # Run pip install as pykms user
   sudo -u pykms /opt/py-kms/venv/bin/pip install -r /opt/py-kms/requirements.txt
 
+  # Copy config file
+  echo_out "Copying config file to /etc/py-kms/config.yaml..."
+  sudo mkdir -p /etc/py-kms
+  sudo cp ./resources/config.yaml /etc/py-kms/config.yaml
+  sudo chown pykms:pykms /etc/py-kms/config.yaml
+
   # Copy and enable systemd service
   echo_out "Setting up systemd service..."
   sudo cp ./resources/kms-server-ubuntu /lib/systemd/system/kms-server.service

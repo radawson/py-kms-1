@@ -9,6 +9,10 @@
     <div class="card-body">
         <form id="configForm" method="POST">
             <div class="mb-3">
+                <label class="form-label">Server EPID</label>
+                <input type="text" class="form-control" name="server_epid" value="{{ config.server_epid }}">
+            </div>
+            <div class="mb-3">
                 <label class="form-label">Database Type</label>
                 <select class="form-select" name="db_type" id="dbType">
                     <option value="sqlite" {% if config.db_type == 'sqlite' %}selected{% endif %}>SQLite</option>
