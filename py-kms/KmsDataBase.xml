@@ -1048,6 +1048,7 @@
 
 			<KmsItem DisplayName="Office LTSC 2024" Id="f3d89bbf-c0ec-47ce-a8fa-e5a5f97e447f" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Office LTSC Professional Plus 2024" Id="85dd8b5f-eaa4-4af3-a628-cce9e77c9a04" Gvlk="XNMKJ-6RK4F-KMJVX-8D9MJ-6MWKP" />
+				<SkuItem DisplayName="Office LTSC Professional Plus 2024" Id="fbdb3e18-a8ef-4fb3-9183-dffd60bd0984" Gvlk="XNMKJ-6RK4F-KMJVX-8D9MJ-6MWKP" />
 				<SkuItem DisplayName="Office LTSC Standard 2024" Id="6912a74b-a5fb-401a-bfdb-2e3ab46f4b03" Gvlk="BNWWJ-YQWMR-QKGCB-6TMB3-9D9HK" />
 				<SkuItem DisplayName="Project Professional 2024" Id="2ca2bf3f-949e-446a-82c7-e25a15ec78c5" Gvlk="BNPRR-3FKK7-T2MBV-FRQ4W-PKD2B" />
 				<SkuItem DisplayName="Project Standard 2024" Id="1777f0e3-7392-4198-97ea-8ae4de6f6382" Gvlk="C4F7P-NCP8C-6CQPT-MQHV9-JXD2N" />

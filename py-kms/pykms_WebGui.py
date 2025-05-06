@@ -33,9 +33,9 @@ def index():
     clients = db.get_all_clients()
     stats = {
         'total_clients': len(clients),
-        'active_clients': sum(1 for c in clients if c.licenseStatus == 'Licensed'),
-        'windows_clients': sum(1 for c in clients if 'Windows' in c.applicationId),
-        'office_clients': sum(1 for c in clients if 'Office' in c.applicationId)
+        'active_clients': sum(1 for c in clients if c.licenseStatus == 'Activated'),
+        'windows_clients': sum(1 for c in clients if 'Windows' in str(c.applicationId)),
+        'office_clients': sum(1 for c in clients if 'Office' in str(c.applicationId))
     }
     return render_template('dashboard.html', stats=stats, clients=clients)
 

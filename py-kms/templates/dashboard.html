@@ -129,7 +129,17 @@ document.addEventListener('DOMContentLoaded', function() {
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    suggestedMax: totalClients + 1
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw + ' clients';
+                        }
+                    }
                 }
             }
         }
