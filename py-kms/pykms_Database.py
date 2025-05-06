@@ -63,7 +63,9 @@ class Client(Base):
     clientMachineId = Column(String(255))  # Explicit length for MySQL compatibility
     machineName = Column(String(255))
     applicationId = Column(String(255))
+    applicationName = Column(String(255), nullable=True)
     skuId = Column(String(255))
+    skuName = Column(String(255), nullable=True)
     licenseStatus = Column(String(50))
     lastRequestTime = Column(UnixTimestamp, nullable=False)
     kmsEpid = Column(String(255))
@@ -148,7 +150,9 @@ class DatabaseBackend:
                                     clientMachineId VARCHAR(255),
                                     machineName VARCHAR(255),
                                     applicationId VARCHAR(255),
+                                    applicationName VARCHAR(255),
                                     skuId VARCHAR(255),
+                                    skuName VARCHAR(255),
                                     licenseStatus VARCHAR(50),
                                     lastRequestTime TIMESTAMP,
                                     kmsEpid VARCHAR(255),
@@ -198,7 +202,9 @@ class DatabaseBackend:
                     clientMachineId=info_dict['clientMachineId'],
                     machineName=info_dict['machineName'],
                     applicationId=info_dict['appId'],
+                    applicationName=info_dict.get('applicationName'),
                     skuId=info_dict['skuId'],
+                    skuName=info_dict.get('skuName'),
                     licenseStatus=info_dict['licenseStatus'],
                     lastRequestTime=info_dict['requestTime'],
                     ipAddress=info_dict.get('ipAddress')
@@ -208,7 +214,9 @@ class DatabaseBackend:
                 # Update existing client
                 client.machineName = info_dict['machineName']
                 client.applicationId = info_dict['appId']
+                client.applicationName = info_dict.get('applicationName')
                 client.skuId = info_dict['skuId']
+                client.skuName = info_dict.get('skuName')
                 client.licenseStatus = info_dict['licenseStatus']
                 client.lastRequestTime = info_dict['requestTime']
                 client.ipAddress = info_dict.get('ipAddress')

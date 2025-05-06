@@ -249,7 +249,20 @@ could be detected as not genuine !{end}" %currentClientCount)
                         "ipAddress" : self.srv_config.get('raddr', ('Unknown', 0))[0]  # Get client IP from raddr tuple
                 }
 
-                loggersrv.info("Machine Name: %s" % infoDict["machineName"])
+                # Look up names from IDs, default to ID if name not found
+                appName = kmsdb.appItems.get(infoDict['appId'], {}).get('DisplayName', infoDict['appId'])
+                # Correcting Sku lookup: Iterate through KmsItems to find the SkuItem
+                skuName = infoDict['skuId'] # Default to ID
+                for kmsItem in kmsdb.kmsItems.values():
+                    if infoDict['skuId'] in kmsItem.get('SkuItems', {}):
+                        skuName = kmsItem['SkuItems'][infoDict['skuId']].get('DisplayName', infoDict['skuId'])
+                        break # Found the SKU, exit loop
+                
+                infoDict['applicationName'] = appName
+                infoDict['skuName'] = skuName
+
+                # Log client info
+                loggersrv.info("Machine Name: %s" % infoDict['machineName'])
                 loggersrv.info("Client Machine ID: %s" % infoDict["clientMachineId"])
                 loggersrv.info("Application ID: %s" % infoDict["appId"])
                 loggersrv.info("SKU ID: %s" % infoDict["skuId"])
