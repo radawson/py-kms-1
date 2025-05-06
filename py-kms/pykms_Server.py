@@ -357,7 +357,7 @@ def server_options():
         "ip",
         nargs="?",
         action="store",
-        default=None,  # Changed from srv_options["ip"]["def"]
+        default=srv_options["ip"]["def"],
         help=srv_options["ip"]["help"],
         type=str,
     )
@@ -365,7 +365,7 @@ def server_options():
         "port",
         nargs="?",
         action="store",
-        default=None,  # Changed from srv_options["port"]["def"]
+        default=srv_options["port"]["def"],
         help=srv_options["port"]["help"],
         type=int,
     )

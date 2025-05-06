@@ -36,7 +36,7 @@ sudo cp requirements* /opt/py-kms
 sudo chown -R pykms:pykms /opt/py-kms
 
 echo "Installing Python dependencies"
-# Install dependencies from requirements.txt
+cd /opt/py-kms
 sudo -u pykms /opt/py-kms/venv/bin/pip install -r /opt/py-kms/requirements.txt
 
 echo "Starting KMS service"
