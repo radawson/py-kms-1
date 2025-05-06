@@ -240,26 +240,16 @@ could be detected as not genuine !{end}" %currentClientCount)
 
                 infoDict = {
                         "machineName" : kmsRequest.getMachineName(),
-                        "clientMachineId" : str(clientMachineId),
-                        "appId" : appName,
-                        "skuId" : skuName,
+                        "clientMachineId" : str(clientMachineId), # Original CMID
+                        "appId" : str(applicationId),             # Original AppId (UUID string)
+                        "applicationName": appName,               # Looked-up App Name
+                        "skuId" : str(skuId),                   # Original SkuId (UUID string)
+                        "skuName": skuName,                     # Looked-up Sku Name
                         "licenseStatus" : kmsRequest.getLicenseStatus(),
                         "requestTime" : int(time.time()),
                         "kmsEpid" : None,
-                        "ipAddress" : self.srv_config.get('raddr', ('Unknown', 0))[0]  # Get client IP from raddr tuple
+                        "ipAddress" : self.srv_config.get('raddr', ('Unknown', 0))[0]
                 }
-
-                # Look up names from IDs, default to ID if name not found
-                appName = kmsdb.appItems.get(infoDict['appId'], {}).get('DisplayName', infoDict['appId'])
-                # Correcting Sku lookup: Iterate through KmsItems to find the SkuItem
-                skuName = infoDict['skuId'] # Default to ID
-                for kmsItem in kmsdb.kmsItems.values():
-                    if infoDict['skuId'] in kmsItem.get('SkuItems', {}):
-                        skuName = kmsItem['SkuItems'][infoDict['skuId']].get('DisplayName', infoDict['skuId'])
-                        break # Found the SKU, exit loop
-                
-                infoDict['applicationName'] = appName
-                infoDict['skuName'] = skuName
 
                 # Log client info
                 loggersrv.info("Machine Name: %s" % infoDict['machineName'])
@@ -290,9 +280,10 @@ could be detected as not genuine !{end}" %currentClientCount)
                 # *** Log before calling createKmsResponse ***
                 loggersrv.debug("Calling createKmsResponse with currentClientCount: %d", currentClientCount)
 
-                return self.createKmsResponse(kmsRequest, currentClientCount, appName)
+                # Pass the looked-up applicationName (descriptive name) to createKmsResponse for the update_epid call
+                return self.createKmsResponse(kmsRequest, currentClientCount, infoDict['applicationName'])
 
-        def createKmsResponse(self, kmsRequest, currentClientCount, appName):
+        def createKmsResponse(self, kmsRequest, currentClientCount, appNameForDb): # Renamed param for clarity
                 # *** Wrap in try/except to catch errors during response creation ***
                 try:
                         response = self.kmsResponseStruct()
@@ -314,11 +305,11 @@ could be detected as not genuine !{end}" %currentClientCount)
 
                         # Update database if enabled
                         if self.srv_config.get('db_instance'):
-                                self.srv_config['db_instance'].update_epid(kmsRequest, response, appName)
+                                self.srv_config['db_instance'].update_epid(kmsRequest, response, appNameForDb) # Use the passed name
                         # else:
                                 # Update legacy sqlite if enabled
                                 # if self.srv_config['sqlite']:
-                                #      sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appName)
+                                #      sql_update_epid(self.srv_config['sqlite'], kmsRequest, response, appNameForDb)
 
                         loggersrv.info("Server ePID: %s" % response["kmsEpid"].decode('utf-16le'))
 
