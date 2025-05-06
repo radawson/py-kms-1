@@ -305,7 +305,9 @@ could be detected as not genuine !{end}" %currentClientCount)
 
                         # Update database if enabled
                         if self.srv_config.get('db_instance'):
-                                self.srv_config['db_instance'].update_epid(kmsRequest, response, appNameForDb) # Use the passed name
+                                # Pass the original AppID (UUID string) from the request for the database query
+                                original_app_id_str = str(kmsRequest['applicationId'].get())
+                                self.srv_config['db_instance'].update_epid(kmsRequest, response, original_app_id_str)
                         # else:
                                 # Update legacy sqlite if enabled
                                 # if self.srv_config['sqlite']:
