@@ -3,7 +3,7 @@
 import os
 import logging
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, TypeDecorator, TIMESTAMP, inspect
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, TypeDecorator, TIMESTAMP, inspect, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -91,10 +91,12 @@ class DatabaseBackend:
                 connect_args={'timeout': 30}  
             )
         
-        # Check if we need to add the ipAddress column
+        # Create tables first
+        Base.metadata.create_all(self.engine)
+        
+        # Then check if we need to add the ipAddress column
         self._check_and_update_schema()
         
-        Base.metadata.create_all(self.engine)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
 
@@ -111,20 +113,77 @@ class DatabaseBackend:
                     # Add ipAddress column
                     with self.engine.connect() as connection:
                         if 'sqlite' in str(self.engine.url):
-                            # SQLite syntax
-                            connection.execute('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)')
+                            # SQLite syntax - needs text() wrapper and explicit transaction
+                            trans = connection.begin()
+                            try:
+                                connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
+                                trans.commit()
+                                pretty_printer(log_obj=loggersrv.info,
+                                            put_text="Added ipAddress column to clients table")
+                            except Exception as e:
+                                trans.rollback()
+                                raise
                         elif 'mysql' in str(self.engine.url):
                             # MySQL syntax
-                            connection.execute('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)')
+                            connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
+                            connection.commit()
                         elif 'postgresql' in str(self.engine.url):
                             # PostgreSQL syntax
-                            connection.execute('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)')
-                        connection.commit()
-                    pretty_printer(log_obj=loggersrv.info,
-                                 put_text="Added ipAddress column to clients table")
+                            connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
+                            connection.commit()
         except Exception as e:
             pretty_printer(log_obj=loggersrv.error, to_exit=False,
                          put_text="{reverse}{red}{bold}Schema update error: %s. Continuing...{end}" % str(e))
+            
+            # If the column addition failed, we need to recreate the table with the new schema
+            if 'sqlite' in str(self.engine.url):
+                try:
+                    with self.engine.connect() as connection:
+                        trans = connection.begin()
+                        try:
+                            # Create new table with correct schema
+                            connection.execute(text('''
+                                CREATE TABLE clients_new (
+                                    id INTEGER PRIMARY KEY,
+                                    clientMachineId VARCHAR(255),
+                                    machineName VARCHAR(255),
+                                    applicationId VARCHAR(255),
+                                    skuId VARCHAR(255),
+                                    licenseStatus VARCHAR(50),
+                                    lastRequestTime TIMESTAMP,
+                                    kmsEpid VARCHAR(255),
+                                    requestCount INTEGER DEFAULT 1,
+                                    ipAddress VARCHAR(45)
+                                )
+                            '''))
+                            
+                            # Copy data from old table
+                            connection.execute(text('''
+                                INSERT INTO clients_new (
+                                    id, clientMachineId, machineName, applicationId,
+                                    skuId, licenseStatus, lastRequestTime, kmsEpid,
+                                    requestCount
+                                )
+                                SELECT id, clientMachineId, machineName, applicationId,
+                                       skuId, licenseStatus, lastRequestTime, kmsEpid,
+                                       requestCount
+                                FROM clients
+                            '''))
+                            
+                            # Drop old table and rename new one
+                            connection.execute(text('DROP TABLE clients'))
+                            connection.execute(text('ALTER TABLE clients_new RENAME TO clients'))
+                            
+                            trans.commit()
+                            pretty_printer(log_obj=loggersrv.info,
+                                        put_text="Successfully recreated clients table with ipAddress column")
+                        except Exception as e2:
+                            trans.rollback()
+                            pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                                        put_text="{reverse}{red}{bold}Failed to recreate table: %s. Continuing...{end}" % str(e2))
+                except Exception as e3:
+                    pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                                put_text="{reverse}{red}{bold}Failed to connect for table recreation: %s. Continuing...{end}" % str(e3))
 
     def update_client(self, info_dict):
         try:
