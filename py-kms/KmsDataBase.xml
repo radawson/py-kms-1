@@ -996,6 +996,14 @@
 				<SkuItem DisplayName="Office SharePoint Designer (Frontpage) 2013 Retail [Pre-Release]" Id="00000000-0000-0000-0000-000000000000" Gvlk="" />
 			</KmsItem>
 
+			<KmsItem DisplayName="Office 2014" Id="59a52881-a989-479d-af46-f275c6370663" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
+				<SkuItem DisplayName="Office 2014" Id="59a52881-a989-479d-af46-f275c6370663" Gvlk="9N9PT-27V4Y-VJ2PD-YXFMF-YTFQT" />
+			</KmsItem>
+
+			<KmsItem DisplayName="Office 15/16/17/LTSC" Id="0ff1ce15-a989-479d-af46-f275c6370663" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
+				<SkuItem DisplayName="Office 15/16/17/LTSC" Id="0ff1ce15-a989-479d-af46-f275c6370663" Gvlk="9N9PT-27V4Y-VJ2PD-YXFMF-YTFQT" />
+			</KmsItem>
+
 			<KmsItem DisplayName="Office 2016" Id="85b5f61b-320b-4be3-814a-b76b2bfafc82" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Office Access 2016" Id="67c0fc0c-deba-401b-bf8b-9c8ad8395804" Gvlk="GNH9Y-D2J4T-FJHGG-QRVH7-QPFDW" />
 				<SkuItem DisplayName="Office Excel 2016" Id="c3e65d36-141f-4d2f-a303-a842ee756a29" Gvlk="9C2PK-NWTVB-JMPW8-BFT28-7FTBF" />

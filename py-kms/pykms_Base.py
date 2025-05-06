@@ -182,7 +182,11 @@ could be detected as not genuine !{end}" %currentClientCount)
                         tempAppName = appName # Default to existing appName
                         try:
                             if not foundApp and 'Id' in appitem and uuid.UUID(appitem['Id']) == applicationId:
+                                # Get the display name from the AppItem
                                 tempAppName = appitem.get('DisplayName', appName)
+                                # Special handling for Office products - extract the main product name
+                                if 'Office' in tempAppName:
+                                    tempAppName = 'Office'
                                 foundApp = True # Mark App as found
                         except ValueError:
                              loggersrv.warning("Invalid UUID format for AppItem ID '%s'", appitem.get('Id', 'N/A'))
