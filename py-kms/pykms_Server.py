@@ -823,7 +823,7 @@ def server_check():
             db_config = {
                 'db_type': srv_config.get("db_type", 'sqlite'), 
                 'db_host': srv_config.get("db_host"),
-                'db_name': srv_config.get("db_name"), # This holds the full DSN, e.g., 'sqlite:///path' or 'db_name'
+                'db_name': srv_config.get("db_name"), # This holds the full DSN, e.g., 'sqlite:///path/to/db.sqlite' or 'db_name'
                 'db_user': srv_config.get("db_user"),
                 'db_password': srv_config.get("db_password"),
             }
@@ -873,6 +873,9 @@ def server_check():
 
 
 def server_create():
+    """Create address list (when the current user indicates execution inside the Windows Sandbox,
+    then we wont allow port reuse - it is not supported).
+    """
     # Create address list (when the current user indicates execution inside the Windows Sandbox,
     # then we wont allow port reuse - it is not supported).
     all_address = [
@@ -984,6 +987,8 @@ class kmsServerHandler(socketserver.BaseRequestHandler):
             % (self.client_address[0], self.client_address[1])
         )
         srv_config["raddr"] = self.client_address
+        self.connection = self.request
+        self.client_address = self.client_address[0]
 
     def handle(self):
         self.request.settimeout(srv_config["timeoutsndrcv"])
@@ -1013,6 +1018,16 @@ class kmsServerHandler(socketserver.BaseRequestHandler):
                 loggersrv.info("Received activation request.")
                 pretty_printer(num_text=[-2, 13], where="srv")
                 handler = pykms_RpcRequest.handler(self.data, srv_config)
+                
+                # Check for unknown SKU ID after processing the request
+                if hasattr(handler, 'request') and hasattr(handler.request, 'get_response_data'):
+                    response_data = handler.request.get_response_data()
+                    if 'skuId' in response_data:
+                        sku_id = response_data['skuId']
+                        if not handler.request.find_sku_name(sku_id):
+                            if 'db_instance' in srv_config and srv_config['db_instance']:
+                                srv_config['db_instance'].add_unknown_activation(self.client_address, sku_id)
+                                loggersrv.warning("Unknown SKU ID detected: %s" % sku_id)
             else:
                 pretty_printer(
                     log_obj=loggersrv.error,

@@ -3,7 +3,7 @@
 import os
 import logging
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, TypeDecorator, TIMESTAMP, inspect, text
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, TypeDecorator, TIMESTAMP, inspect, text, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -71,6 +71,16 @@ class Client(Base):
     kmsEpid = Column(String(255))
     requestCount = Column(Integer, default=1)
     ipAddress = Column(String(45))  # Support both IPv4 and IPv6 addresses
+
+class UnknownActivation(Base):
+    __tablename__ = 'unknown_activations'
+    
+    id = Column(Integer, primary_key=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    client_ip = Column(String)
+    sku_id = Column(String)
+    ip_address = Column(String)
+    resolved = Column(Boolean, default=False)
 
 class DatabaseBackend:
     def __init__(self, connection_string):
@@ -243,6 +253,26 @@ class DatabaseBackend:
             pretty_printer(log_obj=loggersrv.error, to_exit=False,
                          put_text="{reverse}{red}{bold}Database Error: %s. Continuing...{end}" % str(e))
             return []
+
+    def add_unknown_activation(self, client_ip, sku_id):
+        """Add an unknown activation attempt to the database"""
+        activation = UnknownActivation(client_ip=client_ip, sku_id=sku_id)
+        self.session.add(activation)
+        self.session.commit()
+    
+    def get_unknown_activations(self, include_resolved=False):
+        """Get list of unknown activation attempts"""
+        query = self.session.query(UnknownActivation)
+        if not include_resolved:
+            query = query.filter_by(resolved=False)
+        return query.order_by(UnknownActivation.timestamp.desc()).all()
+
+    def mark_activation_resolved(self, activation_id):
+        """Mark an unknown activation as resolved"""
+        activation = self.session.query(UnknownActivation).get(activation_id)
+        if activation:
+            activation.resolved = True
+            self.session.commit()
 
 def create_backend(config):
     """Create database backend based on configuration"""

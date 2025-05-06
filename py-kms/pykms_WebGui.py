@@ -31,13 +31,14 @@ def index():
     if not db:
         return "Database not initialized", 500
     clients = db.get_all_clients()
+    unknown_activations = db.get_unknown_activations()
     stats = {
         'total_clients': len(clients),
         'active_clients': sum(1 for c in clients if c.licenseStatus == 'Activated'),
         'windows_clients': sum(1 for c in clients if 'Windows' in str(c.applicationId)),
         'office_clients': sum(1 for c in clients if 'Office' in str(c.applicationId))
     }
-    return render_template('dashboard.html', stats=stats, clients=clients)
+    return render_template('dashboard.html', stats=stats, clients=clients, unknown_activations=unknown_activations)
 
 @app.route('/clients')
 def client_list():
@@ -99,6 +100,33 @@ def get_logs():
         return jsonify({'logs': logs})
     except Exception as e:
         return jsonify({'error': str(e)})
+
+@app.route('/api/notifications')
+def get_notifications():
+    """API endpoint for fetching unknown activation attempts"""
+    db = current_app.config['db']
+    if not db:
+        return jsonify({'error': 'Database not initialized'}), 500
+    
+    notifications = db.get_unknown_activations()
+    return jsonify({
+        'notifications': [{
+            'id': n.id,
+            'timestamp': format_datetime(n.timestamp),
+            'client_ip': n.client_ip,
+            'sku_id': n.sku_id
+        } for n in notifications]
+    })
+
+@app.route('/api/notifications/resolve/<int:activation_id>', methods=['POST'])
+def resolve_notification(activation_id):
+    """API endpoint for marking an unknown activation as resolved"""
+    db = current_app.config['db']
+    if not db:
+        return jsonify({'error': 'Database not initialized'}), 500
+    
+    db.mark_activation_resolved(activation_id)
+    return jsonify({'status': 'success'})
 
 def save_config(config):
     """Save configuration to file"""

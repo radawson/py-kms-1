@@ -61,6 +61,39 @@
     </div>
 </div>
 
+<!-- Unknown Activation Notifications -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Unknown Activation Attempts</h5>
+        <div class="table-responsive">
+            <table class="table" id="unknownActivationsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Client IP</th>
+                        <th>SKU ID</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activation in unknown_activations %}
+                    <tr data-id="{{ activation.id }}">
+                        <td>{{ activation.timestamp|format_datetime }}</td>
+                        <td>{{ activation.client_ip }}</td>
+                        <td>{{ activation.sku_id }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success mark-resolved" onclick="markResolved({{ activation.id }})">
+                                Mark Resolved
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Activations -->
 <div class="card mt-4">
     <div class="card-body">
@@ -145,5 +178,39 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 });
+
+function markResolved(activationId) {
+    fetch('/api/notifications/resolve/' + activationId, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Remove the row from the table
+            document.querySelector(`tr[data-id="${activationId}"]`).remove();
+        }
+    });
+}
+
+// Periodically check for new notifications
+setInterval(() => {
+    fetch('/api/notifications')
+    .then(response => response.json())
+    .then(data => {
+        const tbody = document.querySelector('#unknownActivationsTable tbody');
+        tbody.innerHTML = data.notifications.map(n => `
+            <tr data-id="${n.id}">
+                <td>${n.timestamp}</td>
+                <td>${n.client_ip}</td>
+                <td>${n.sku_id}</td>
+                <td>
+                    <button class="btn btn-sm btn-success mark-resolved" onclick="markResolved(${n.id})">
+                        Mark Resolved
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    });
+}, 30000); // Check every 30 seconds
 </script>
 {% endblock %} 

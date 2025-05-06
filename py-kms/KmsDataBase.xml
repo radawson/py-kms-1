@@ -890,6 +890,7 @@
 
 			<KmsItem DisplayName="Windows Server 2022" Id="adf06f0c-e7c3-4f70-ad30-734f31a3bd01" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Windows Server 2022 Datacenter" Id="adf06f0c-e7c3-4f70-ad30-734f31a3bd01" Gvlk="WX4NM-KYWYW-QJJR4-XV3QB-6VM33" />
+				<SkuItem DisplayName="Windows Server 2022 Datacenter" Id="ef6cfc9f-8c5d-44ac-9aad-de6a2ea0ae03" Gvlk="WX4NM-KYWYW-QJJR4-XV3QB-6VM33" />
 				<SkuItem DisplayName="Windows Server 2022 Standard" Id="c085bf01-48ad-4875-87f2-bd0414dac8a4" Gvlk="VDYBN-27WPP-V4HQT-9VMD4-VMK7H" />
 				<SkuItem DisplayName="Windows Server 2022 Datacenter: Azure Edition" Id="d30136fc-cb4b-416e-a23d-87207abc44a9" Gvlk="NTBV8-9K7Q8-V27C6-M2BTV-KHMXV" />
 			</KmsItem>
@@ -921,6 +922,8 @@
 				<SkuItem DisplayName="Windows 10 Enterprise LTSB 2015" Id="58e97c99-f377-4ef1-81d5-4ad5522b5fd8" Gvlk="WNMTR-4C88C-JK8YV-HQ7T2-76DF9" />
 				<SkuItem DisplayName="Windows 10 Enterprise N LTSB 2015" Id="cd4e2d9f-5059-4a50-a92d-05d5bb1267c7" Gvlk="2F77B-TNFGY-69QQF-B8YKP-D69TJ" />
 			</KmsItem>
+
+
 
 		</AppItem>
 
