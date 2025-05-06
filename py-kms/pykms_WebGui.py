@@ -143,27 +143,34 @@ def init_web_gui(config):
         DEBUG=False,       # Disable debug mode
     )
     
-    # Configure logging to match KMS server format
+    # Configure logging
     import logging
     from werkzeug.serving import WSGIRequestHandler
     WSGIRequestHandler.protocol_version = "HTTP/1.1"  # Reduce logging noise
     
     # Disable Werkzeug's default logger
-    log = logging.getLogger('werkzeug')
-    # log.setLevel(logging.ERROR) # Don't suppress INFO logs
+    werkzeug_logger = logging.getLogger('werkzeug')
+    werkzeug_logger.handlers = []  # Remove default handlers
     
-    # Use our own logger for Flask
-    flask_logger = logging.getLogger('logsrv') 
-    app.logger.handlers = flask_logger.handlers
-    app.logger.setLevel(flask_logger.level)
+    # Create a simple formatter for Werkzeug
+    formatter = logging.Formatter('%(message)s')
     
-    # Set Werkzeug logger level to match Flask/main logger
-    log.setLevel(flask_logger.level)
+    # Add handler to Werkzeug logger that matches our main logger
+    if loggersrv.handlers:
+        for handler in loggersrv.handlers:
+            werkzeug_handler = handler.__class__(**handler.__dict__)
+            werkzeug_handler.setFormatter(formatter)
+            werkzeug_logger.addHandler(werkzeug_handler)
     
-    """Initialize the web GUI with configuration"""
-    db_instance = create_backend(config)
-    app.config['db'] = db_instance
-    app.config.update(config)
+    # Set Werkzeug logger level to match main logger
+    werkzeug_logger.setLevel(loggersrv.level)
+    
+    # Use our logger for Flask
+    app.logger.handlers = []  # Remove default handlers
+    for handler in loggersrv.handlers:
+        app.logger.addHandler(handler)
+    app.logger.setLevel(loggersrv.level)
+    
     return app
 
 if __name__ == '__main__':
