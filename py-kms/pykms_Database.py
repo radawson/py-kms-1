@@ -76,7 +76,7 @@ class UnknownActivation(Base):
     __tablename__ = 'unknown_activations'
     
     id = Column(Integer, primary_key=True)
-    timestamp = Column(DateTime, default=datetime.datetime.utcnow)
+    timestamp = Column(DateTime, default=datetime.utcnow)
     client_ip = Column(String)
     sku_id = Column(String)
     ip_address = Column(String)
