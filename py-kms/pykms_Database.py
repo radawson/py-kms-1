@@ -111,83 +111,73 @@ class DatabaseBackend:
             # Check if clients table exists and get its columns
             if 'clients' in inspector.get_table_names():
                 columns = [col['name'] for col in inspector.get_columns('clients')]
+                
+                # Check and add ipAddress column
                 if 'ipAddress' not in columns:
-                    # Add ipAddress column
                     with self.engine.connect() as connection:
-                        if 'sqlite' in str(self.engine.url):
-                            # SQLite syntax - needs text() wrapper and explicit transaction
-                            trans = connection.begin()
-                            try:
-                                connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
-                                trans.commit()
-                                pretty_printer(log_obj=loggersrv.info,
-                                            put_text="Added ipAddress column to clients table")
-                            except Exception as e:
-                                trans.rollback()
-                                raise
-                        elif 'mysql' in str(self.engine.url):
-                            # MySQL syntax
-                            connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
-                            connection.commit()
-                        elif 'postgresql' in str(self.engine.url):
-                            # PostgreSQL syntax
-                            connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
-                            connection.commit()
+                         trans = connection.begin()
+                         try:
+                             if 'sqlite' in str(self.engine.url):
+                                 connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
+                             elif 'mysql' in str(self.engine.url):
+                                 connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
+                             elif 'postgresql' in str(self.engine.url):
+                                 connection.execute(text('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)'))
+                             trans.commit()
+                             pretty_printer(log_obj=loggersrv.info,
+                                         put_text="Added ipAddress column to clients table")
+                         except Exception as e_ip:
+                             trans.rollback()
+                             pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                                          put_text="{reverse}{red}{bold}Failed to add ipAddress column: %s. Continuing...{end}" % str(e_ip))
+                             # Consider specific error handling or re-raising if critical
+                             
+                # Check and add applicationName column
+                if 'applicationName' not in columns:
+                    with self.engine.connect() as connection:
+                         trans = connection.begin()
+                         try:
+                             col_type = 'VARCHAR(255)'
+                             if 'sqlite' in str(self.engine.url):
+                                 connection.execute(text(f'ALTER TABLE clients ADD COLUMN applicationName {col_type}'))
+                             elif 'mysql' in str(self.engine.url):
+                                 connection.execute(text(f'ALTER TABLE clients ADD COLUMN applicationName {col_type}'))
+                             elif 'postgresql' in str(self.engine.url):
+                                 connection.execute(text(f'ALTER TABLE clients ADD COLUMN applicationName {col_type}'))
+                             trans.commit()
+                             pretty_printer(log_obj=loggersrv.info,
+                                         put_text="Added applicationName column to clients table")
+                         except Exception as e_app:
+                             trans.rollback()
+                             pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                                          put_text="{reverse}{red}{bold}Failed to add applicationName column: %s. Continuing...{end}" % str(e_app))
+                                          
+                # Check and add skuName column
+                if 'skuName' not in columns:
+                     with self.engine.connect() as connection:
+                         trans = connection.begin()
+                         try:
+                             col_type = 'VARCHAR(255)'
+                             if 'sqlite' in str(self.engine.url):
+                                 connection.execute(text(f'ALTER TABLE clients ADD COLUMN skuName {col_type}'))
+                             elif 'mysql' in str(self.engine.url):
+                                 connection.execute(text(f'ALTER TABLE clients ADD COLUMN skuName {col_type}'))
+                             elif 'postgresql' in str(self.engine.url):
+                                 connection.execute(text(f'ALTER TABLE clients ADD COLUMN skuName {col_type}'))
+                             trans.commit()
+                             pretty_printer(log_obj=loggersrv.info,
+                                         put_text="Added skuName column to clients table")
+                         except Exception as e_sku:
+                             trans.rollback()
+                             pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                                          put_text="{reverse}{red}{bold}Failed to add skuName column: %s. Continuing...{end}" % str(e_sku))
+
         except Exception as e:
             pretty_printer(log_obj=loggersrv.error, to_exit=False,
-                         put_text="{reverse}{red}{bold}Schema update error: %s. Continuing...{end}" % str(e))
+                         put_text="{reverse}{red}{bold}Schema inspection/update error: %s. Continuing...{end}" % str(e))
             
-            # If the column addition failed, we need to recreate the table with the new schema
-            if 'sqlite' in str(self.engine.url):
-                try:
-                    with self.engine.connect() as connection:
-                        trans = connection.begin()
-                        try:
-                            # Create new table with correct schema
-                            connection.execute(text('''
-                                CREATE TABLE clients_new (
-                                    id INTEGER PRIMARY KEY,
-                                    clientMachineId VARCHAR(255),
-                                    machineName VARCHAR(255),
-                                    applicationId VARCHAR(255),
-                                    applicationName VARCHAR(255),
-                                    skuId VARCHAR(255),
-                                    skuName VARCHAR(255),
-                                    licenseStatus VARCHAR(50),
-                                    lastRequestTime TIMESTAMP,
-                                    kmsEpid VARCHAR(255),
-                                    requestCount INTEGER DEFAULT 1,
-                                    ipAddress VARCHAR(45)
-                                )
-                            '''))
-                            
-                            # Copy data from old table
-                            connection.execute(text('''
-                                INSERT INTO clients_new (
-                                    id, clientMachineId, machineName, applicationId,
-                                    skuId, licenseStatus, lastRequestTime, kmsEpid,
-                                    requestCount
-                                )
-                                SELECT id, clientMachineId, machineName, applicationId,
-                                       skuId, licenseStatus, lastRequestTime, kmsEpid,
-                                       requestCount
-                                FROM clients
-                            '''))
-                            
-                            # Drop old table and rename new one
-                            connection.execute(text('DROP TABLE clients'))
-                            connection.execute(text('ALTER TABLE clients_new RENAME TO clients'))
-                            
-                            trans.commit()
-                            pretty_printer(log_obj=loggersrv.info,
-                                        put_text="Successfully recreated clients table with ipAddress column")
-                        except Exception as e2:
-                            trans.rollback()
-                            pretty_printer(log_obj=loggersrv.error, to_exit=False,
-                                        put_text="{reverse}{red}{bold}Failed to recreate table: %s. Continuing...{end}" % str(e2))
-                except Exception as e3:
-                    pretty_printer(log_obj=loggersrv.error, to_exit=False,
-                                put_text="{reverse}{red}{bold}Failed to connect for table recreation: %s. Continuing...{end}" % str(e3))
+            # Removed complex table recreation logic as it might be too aggressive
+            # If ALTER TABLE fails consistently, manual intervention might be needed.
 
     def update_client(self, info_dict):
         try:
