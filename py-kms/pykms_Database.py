@@ -113,7 +113,7 @@ class DatabaseBackend:
         self.session = Session()
 
     def _check_and_update_schema(self):
-        """Check if ipAddress column exists and add it if it doesn't."""
+        """Check if required tables and columns exist and add them if they don't."""
         try:
             # Get database inspector
             inspector = inspect(self.engine)
@@ -140,7 +140,6 @@ class DatabaseBackend:
                              trans.rollback()
                              pretty_printer(log_obj=loggersrv.error, to_exit=False,
                                           put_text="{reverse}{red}{bold}Failed to add ipAddress column: %s. Continuing...{end}" % str(e_ip))
-                             # Consider specific error handling or re-raising if critical
                              
                 # Check and add applicationName column
                 if 'applicationName' not in columns:
@@ -181,6 +180,49 @@ class DatabaseBackend:
                              trans.rollback()
                              pretty_printer(log_obj=loggersrv.error, to_exit=False,
                                           put_text="{reverse}{red}{bold}Failed to add skuName column: %s. Continuing...{end}" % str(e_sku))
+
+            # Check if unknown_activations table exists
+            if 'unknown_activations' not in inspector.get_table_names():
+                with self.engine.connect() as connection:
+                    trans = connection.begin()
+                    try:
+                        if 'sqlite' in str(self.engine.url):
+                            connection.execute(text('''
+                                CREATE TABLE unknown_activations (
+                                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    client_ip VARCHAR(45),
+                                    sku_id VARCHAR(255),
+                                    resolved BOOLEAN DEFAULT 0
+                                )
+                            '''))
+                        elif 'mysql' in str(self.engine.url):
+                            connection.execute(text('''
+                                CREATE TABLE unknown_activations (
+                                    id INTEGER PRIMARY KEY AUTO_INCREMENT,
+                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    client_ip VARCHAR(45),
+                                    sku_id VARCHAR(255),
+                                    resolved BOOLEAN DEFAULT FALSE
+                                )
+                            '''))
+                        elif 'postgresql' in str(self.engine.url):
+                            connection.execute(text('''
+                                CREATE TABLE unknown_activations (
+                                    id SERIAL PRIMARY KEY,
+                                    timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                                    client_ip VARCHAR(45),
+                                    sku_id VARCHAR(255),
+                                    resolved BOOLEAN DEFAULT FALSE
+                                )
+                            '''))
+                        trans.commit()
+                        pretty_printer(log_obj=loggersrv.info,
+                                    put_text="Created unknown_activations table")
+                    except Exception as e_unknown:
+                        trans.rollback()
+                        pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                                     put_text="{reverse}{red}{bold}Failed to create unknown_activations table: %s. Continuing...{end}" % str(e_unknown))
 
         except Exception as e:
             pretty_printer(log_obj=loggersrv.error, to_exit=False,
