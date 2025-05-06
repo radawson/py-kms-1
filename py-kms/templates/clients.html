@@ -19,6 +19,7 @@
                         <th>Last Request</th>
                         <th>Request Count</th>
                         <th>KMS ePID</th>
+                        <th>IP Address</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -36,6 +37,7 @@
                         <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
                         <td>{{ client.requestCount }}</td>
                         <td>{{ client.kmsEpid }}</td>
+                        <td>{{ client.ipAddress }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -60,7 +62,8 @@ document.addEventListener('DOMContentLoaded', function() {
             null, // Status
             { type: 'date' }, // Last Request
             { type: 'num' }, // Request Count
-            null  // KMS ePID
+            null,  // KMS ePID
+            null  // IP Address
         ]
     });
 });

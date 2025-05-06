@@ -3,7 +3,7 @@
 import os
 import logging
 from datetime import datetime
-from sqlalchemy import create_engine, Column, Integer, String, DateTime, TypeDecorator, TIMESTAMP
+from sqlalchemy import create_engine, Column, Integer, String, DateTime, TypeDecorator, TIMESTAMP, inspect
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.exc import SQLAlchemyError
@@ -68,6 +68,7 @@ class Client(Base):
     lastRequestTime = Column(UnixTimestamp, nullable=False)
     kmsEpid = Column(String(255))
     requestCount = Column(Integer, default=1)
+    ipAddress = Column(String(45))  # Support both IPv4 and IPv6 addresses
 
 class DatabaseBackend:
     def __init__(self, connection_string):
@@ -90,9 +91,40 @@ class DatabaseBackend:
                 connect_args={'timeout': 30}  
             )
         
+        # Check if we need to add the ipAddress column
+        self._check_and_update_schema()
+        
         Base.metadata.create_all(self.engine)
         Session = sessionmaker(bind=self.engine)
         self.session = Session()
+
+    def _check_and_update_schema(self):
+        """Check if ipAddress column exists and add it if it doesn't."""
+        try:
+            # Get database inspector
+            inspector = inspect(self.engine)
+            
+            # Check if clients table exists and get its columns
+            if 'clients' in inspector.get_table_names():
+                columns = [col['name'] for col in inspector.get_columns('clients')]
+                if 'ipAddress' not in columns:
+                    # Add ipAddress column
+                    with self.engine.connect() as connection:
+                        if 'sqlite' in str(self.engine.url):
+                            # SQLite syntax
+                            connection.execute('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)')
+                        elif 'mysql' in str(self.engine.url):
+                            # MySQL syntax
+                            connection.execute('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)')
+                        elif 'postgresql' in str(self.engine.url):
+                            # PostgreSQL syntax
+                            connection.execute('ALTER TABLE clients ADD COLUMN ipAddress VARCHAR(45)')
+                        connection.commit()
+                    pretty_printer(log_obj=loggersrv.info,
+                                 put_text="Added ipAddress column to clients table")
+        except Exception as e:
+            pretty_printer(log_obj=loggersrv.error, to_exit=False,
+                         put_text="{reverse}{red}{bold}Schema update error: %s. Continuing...{end}" % str(e))
 
     def update_client(self, info_dict):
         try:
@@ -110,6 +142,7 @@ class DatabaseBackend:
                     skuId=info_dict['skuId'],
                     licenseStatus=info_dict['licenseStatus'],
                     lastRequestTime=info_dict['requestTime'],
+                    ipAddress=info_dict.get('ipAddress')
                 )
                 self.session.add(client)
             else:
@@ -119,6 +152,7 @@ class DatabaseBackend:
                 client.skuId = info_dict['skuId']
                 client.licenseStatus = info_dict['licenseStatus']
                 client.lastRequestTime = info_dict['requestTime']
+                client.ipAddress = info_dict.get('ipAddress')
                 client.requestCount += 1
 
             self.session.commit()
