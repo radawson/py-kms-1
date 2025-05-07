@@ -61,6 +61,39 @@
     </div>
 </div>
 
+<!-- Unknown Activation Notifications -->
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Unknown Activation Attempts</h5>
+        <div class="table-responsive">
+            <table class="table" id="unknownActivationsTable">
+                <thead>
+                    <tr>
+                        <th>Timestamp</th>
+                        <th>Client IP</th>
+                        <th>SKU ID</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for activation in unknown_activations %}
+                    <tr data-id="{{ activation.id }}">
+                        <td>{{ activation.timestamp|format_datetime }}</td>
+                        <td>{{ activation.client_ip }}</td>
+                        <td>{{ activation.sku_id }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-success mark-resolved" onclick="markResolved({{ activation.id }})">
+                                Mark Resolved
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 <!-- Recent Activations -->
 <div class="card mt-4">
     <div class="card-body">
@@ -85,7 +118,7 @@
                                 {{ client.licenseStatus }}
                             </span>
                         </td>
-                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ client.lastRequestTime|format_datetime }}</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -98,13 +131,18 @@
 {% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    var windowsClients = Number({{ stats.windows_clients }});
+    var officeClients = Number({{ stats.office_clients }});
+    var activeClients = Number({{ stats.active_clients }});
+    var totalClients = Number({{ stats.total_clients }});
+
     // Client Distribution Chart
     new Chart(document.getElementById('clientDistributionChart'), {
         type: 'pie',
         data: {
             labels: ['Windows Clients', 'Office Clients'],
             datasets: [{
-                data: [{{ stats.windows_clients }}, {{ stats.office_clients }}],
+                data: [windowsClients, officeClients],
                 backgroundColor: ['#0dcaf0', '#ffc107']
             }]
         }
@@ -117,18 +155,62 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: ['Licensed', 'Unlicensed'],
             datasets: [{
                 label: 'Number of Clients',
-                data: [{{ stats.active_clients }}, {{ stats.total_clients - stats.active_clients }}],
+                data: [activeClients, totalClients - activeClients],
                 backgroundColor: ['#198754', '#dc3545']
             }]
         },
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    suggestedMax: totalClients + 1
+                }
+            },
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.raw + ' clients';
+                        }
+                    }
                 }
             }
         }
     });
 });
+
+function markResolved(activationId) {
+    fetch('/api/notifications/resolve/' + activationId, {
+        method: 'POST'
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Remove the row from the table
+            document.querySelector(`tr[data-id="${activationId}"]`).remove();
+        }
+    });
+}
+
+// Periodically check for new notifications
+setInterval(() => {
+    fetch('/api/notifications')
+    .then(response => response.json())
+    .then(data => {
+        const tbody = document.querySelector('#unknownActivationsTable tbody');
+        tbody.innerHTML = data.notifications.map(n => `
+            <tr data-id="${n.id}">
+                <td>${n.timestamp}</td>
+                <td>${n.client_ip}</td>
+                <td>${n.sku_id}</td>
+                <td>
+                    <button class="btn btn-sm btn-success mark-resolved" onclick="markResolved(${n.id})">
+                        Mark Resolved
+                    </button>
+                </td>
+            </tr>
+        `).join('');
+    });
+}, 30000); // Check every 30 seconds
 </script>
 {% endblock %} 

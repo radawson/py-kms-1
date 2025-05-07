@@ -46,7 +46,9 @@ class AES( object ):
     KeySize = {
                 "SIZE_128": 16,
                 "SIZE_192": 24,
-                "SIZE_256": 32
+                "SIZE_256": 32,
+                "SIZE_384": 48,
+                "SIZE_512": 64
                 }
 
     # Rijndael S-box
