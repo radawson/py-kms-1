@@ -19,6 +19,7 @@
                         <th>Last Request</th>
                         <th>Request Count</th>
                         <th>KMS ePID</th>
+
                     </tr>
                 </thead>
                 <tbody>
@@ -26,16 +27,26 @@
                     <tr>
                         <td>{{ client.machineName }}</td>
                         <td>{{ client.clientMachineId }}</td>
-                        <td>{{ client.applicationId }}</td>
-                        <td>{{ client.skuId }}</td>
                         <td>
-                            <span class="badge {% if client.licenseStatus == 'Licensed' %}bg-success{% else %}bg-warning{% endif %}">
+                            {{ client.applicationName }}<br>
+                            <small class="text-muted">({{ client.applicationId }})</small>
+                        </td>
+                        <td>
+                            {{ client.skuName }}<br>
+                            <small class="text-muted">({{ client.skuId }})</small>
+                        </td>
+                        <td>
+                            <span class="badge {% if client.licenseStatus == 'Activated' or client.licenseStatus == 'Licensed' %}bg-success{% else %}bg-warning{% endif %}">
                                 {{ client.licenseStatus }}
                             </span>
                         </td>
-                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                        <td>{{ client.lastRequestTime.strftime('%Y-%m-%d %H:%M:%S') }}
+                            <br>
+                            <small class="text-muted">({{ client.ipAddress }})</small>
+                        </td>
                         <td>{{ client.requestCount }}</td>
                         <td>{{ client.kmsEpid }}</td>
+
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -58,9 +69,9 @@ document.addEventListener('DOMContentLoaded', function() {
             null, // Application
             null, // SKU
             null, // Status
-            { type: 'date' }, // Last Request
+            null, // Last Request
             { type: 'num' }, // Request Count
-            null  // KMS ePID
+            null,  // KMS ePID
         ]
     });
 });

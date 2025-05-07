@@ -85,7 +85,8 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.status === 'success') {
-                alert('Configuration saved successfully!');
+                alert('Configuration saved successfully! Restart the server for changes to take effect.');
+                logger.info('Configuration saved successfully! Restart the server for changes to take effect.');
                 location.reload();
             } else {
                 alert('Error saving configuration');

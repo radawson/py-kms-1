@@ -883,12 +883,14 @@
 
 			<KmsItem DisplayName="Windows Server 2025" Id="8449b1fb-f0ea-497a-99ab-66ca96e9a0f5" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Windows Server 2025 Datacenter" Id="34e1ae55-27f8-4950-8877-7a03be5fb181" Gvlk="D764K-2NDRG-47T6Q-P8T8W-YP6DF" />
+				<SkuItem DisplayName="Windows Server 2025 Datacenter" Id="c052f164-cdf6-409a-a0cb-853ba0f0f55a" Gvlk="" />
 				<SkuItem DisplayName="Windows Server 2025 Standard" Id="de32eafd-aaee-4662-9444-c1befb41bde2" Gvlk="TVRH6-WHNXV-R9WG3-9XRFY-MY832" />
 				<SkuItem DisplayName="Windows Server 2025 Datacenter: Azure Edition" Id="a99cc1f0-7719-4306-9645-294102fbff95" Gvlk="XGN3F-F394H-FD2MY-PP6FD-8MCRC" />
 			</KmsItem>
 
 			<KmsItem DisplayName="Windows Server 2022" Id="adf06f0c-e7c3-4f70-ad30-734f31a3bd01" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Windows Server 2022 Datacenter" Id="adf06f0c-e7c3-4f70-ad30-734f31a3bd01" Gvlk="WX4NM-KYWYW-QJJR4-XV3QB-6VM33" />
+				<SkuItem DisplayName="Windows Server 2022 Datacenter" Id="ef6cfc9f-8c5d-44ac-9aad-de6a2ea0ae03" Gvlk="WX4NM-KYWYW-QJJR4-XV3QB-6VM33" />
 				<SkuItem DisplayName="Windows Server 2022 Standard" Id="c085bf01-48ad-4875-87f2-bd0414dac8a4" Gvlk="VDYBN-27WPP-V4HQT-9VMD4-VMK7H" />
 				<SkuItem DisplayName="Windows Server 2022 Datacenter: Azure Edition" Id="d30136fc-cb4b-416e-a23d-87207abc44a9" Gvlk="NTBV8-9K7Q8-V27C6-M2BTV-KHMXV" />
 			</KmsItem>
@@ -920,6 +922,8 @@
 				<SkuItem DisplayName="Windows 10 Enterprise LTSB 2015" Id="58e97c99-f377-4ef1-81d5-4ad5522b5fd8" Gvlk="WNMTR-4C88C-JK8YV-HQ7T2-76DF9" />
 				<SkuItem DisplayName="Windows 10 Enterprise N LTSB 2015" Id="cd4e2d9f-5059-4a50-a92d-05d5bb1267c7" Gvlk="2F77B-TNFGY-69QQF-B8YKP-D69TJ" />
 			</KmsItem>
+
+
 
 		</AppItem>
 
@@ -995,6 +999,14 @@
 				<SkuItem DisplayName="Office SharePoint Designer (Frontpage) 2013 Retail [Pre-Release]" Id="00000000-0000-0000-0000-000000000000" Gvlk="" />
 			</KmsItem>
 
+			<KmsItem DisplayName="Office 2014" Id="59a52881-a989-479d-af46-f275c6370663" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
+				<SkuItem DisplayName="Office 2014" Id="59a52881-a989-479d-af46-f275c6370663" Gvlk="9N9PT-27V4Y-VJ2PD-YXFMF-YTFQT" />
+			</KmsItem>
+
+			<KmsItem DisplayName="Office 15/16/17/LTSC" Id="0ff1ce15-a989-479d-af46-f275c6370663" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
+				<SkuItem DisplayName="Office 15/16/17/LTSC" Id="0ff1ce15-a989-479d-af46-f275c6370663" Gvlk="9N9PT-27V4Y-VJ2PD-YXFMF-YTFQT" />
+			</KmsItem>
+
 			<KmsItem DisplayName="Office 2016" Id="85b5f61b-320b-4be3-814a-b76b2bfafc82" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Office Access 2016" Id="67c0fc0c-deba-401b-bf8b-9c8ad8395804" Gvlk="GNH9Y-D2J4T-FJHGG-QRVH7-QPFDW" />
 				<SkuItem DisplayName="Office Excel 2016" Id="c3e65d36-141f-4d2f-a303-a842ee756a29" Gvlk="9C2PK-NWTVB-JMPW8-BFT28-7FTBF" />
@@ -1039,6 +1051,7 @@
 
 			<KmsItem DisplayName="Office LTSC 2024" Id="f3d89bbf-c0ec-47ce-a8fa-e5a5f97e447f" CanMapToDefaultCsvlk="false" DefaultKmsProtocol="6.0" NCountPolicy="5">
 				<SkuItem DisplayName="Office LTSC Professional Plus 2024" Id="85dd8b5f-eaa4-4af3-a628-cce9e77c9a04" Gvlk="XNMKJ-6RK4F-KMJVX-8D9MJ-6MWKP" />
+				<SkuItem DisplayName="Office LTSC Professional Plus 2024" Id="fbdb3e18-a8ef-4fb3-9183-dffd60bd0984" Gvlk="XNMKJ-6RK4F-KMJVX-8D9MJ-6MWKP" />
 				<SkuItem DisplayName="Office LTSC Standard 2024" Id="6912a74b-a5fb-401a-bfdb-2e3ab46f4b03" Gvlk="BNWWJ-YQWMR-QKGCB-6TMB3-9D9HK" />
 				<SkuItem DisplayName="Project Professional 2024" Id="2ca2bf3f-949e-446a-82c7-e25a15ec78c5" Gvlk="BNPRR-3FKK7-T2MBV-FRQ4W-PKD2B" />
 				<SkuItem DisplayName="Project Standard 2024" Id="1777f0e3-7392-4198-97ea-8ae4de6f6382" Gvlk="C4F7P-NCP8C-6CQPT-MQHV9-JXD2N" />
