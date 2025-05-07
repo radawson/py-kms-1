@@ -12,7 +12,7 @@ from pykms_DB2Dict import kmsDB2Dict
 
 def epidGenerator(kmsId, version, lcid):
         kmsdb = kmsDB2Dict()
-        winbuilds, csvlkitems, appitems = kmsdb[0], kmsdb[1], kmsdb[2]
+        winbuilds, csvlkitems, appitems = kmsdb['winBuilds'], kmsdb['csvlkItems'], kmsdb['appItems']
         hosts, pkeys = [ [] for _ in range(2) ]
 
         # Product Specific Detection (Get all CSVLK GroupID and PIDRange good for EPID generation), then
