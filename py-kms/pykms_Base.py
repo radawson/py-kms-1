@@ -171,80 +171,66 @@ could be detected as not genuine !{end}" %currentClientCount)
                         
                 # Get a name for SkuId, AppId.        
                 kmsdb = kmsDB2Dict()
-                appName, skuName = str(applicationId), str(skuId) # Initialize with raw IDs
-                foundSku = False
-                foundApp = False
+                app_id_str = str(applicationId)
+                sku_id_str = str(skuId)
+
+                # Initialize with raw IDs as default
+                determined_app_name = app_id_str
+                determined_sku_name = sku_id_str
 
                 try:
-                    appitems = kmsdb[2] # Index 2 should contain AppItems
-                    for appitem in appitems:
-                        # Try to find App Name first for this AppItem
-                        tempAppName = appName # Default to existing appName
-                        try:
-                            if not foundApp and 'Id' in appitem and uuid.UUID(appitem['Id']) == applicationId:
-                                # Get the display name from the AppItem
-                                tempAppName = appitem.get('DisplayName', appName)
-                                # Special handling for Office products - extract the main product name
-                                if 'Office' in tempAppName:
-                                    tempAppName = 'Office'
-                                foundApp = True # Mark App as found
-                        except ValueError:
-                             loggersrv.warning("Invalid UUID format for AppItem ID '%s'", appitem.get('Id', 'N/A'))
-                        except Exception as e:
-                             loggersrv.error("Unexpected error comparing AppID %s with AppItem %s: %s", applicationId, appitem.get('Id', 'N/A'), e, exc_info=True)
-                        
-                        # Now check KmsItems and SkuItems within this AppItem
-                        kmsitems = appitem.get('KmsItems', [])
-                        for kmsitem in kmsitems:
-                            if foundSku: break # Already found in previous KmsItem
-                            skuitems = kmsitem.get('SkuItems', [])
-                            for skuitem in skuitems:
-                                try:
-                                    if 'Id' in skuitem and uuid.UUID(skuitem['Id']) == skuId:
-                                        skuName = skuitem.get('DisplayName', skuName)
-                                        # If we find the Sku, associate it with the AppName found (or default) for this AppItem loop
-                                        appName = tempAppName
-                                        foundSku = True
-                                        break # Exit skuitems loop
-                                except ValueError:
-                                    # Log specific error if UUID conversion fails, but don't reset skuName
-                                    loggersrv.warning("Invalid UUID format for SkuItem ID '%s' in App '%s'", 
-                                                    skuitem.get('Id', 'N/A'), appitem.get('DisplayName', 'Unknown'))
-                                except Exception as e:
-                                     # Log unexpected errors during comparison
-                                     loggersrv.error("Unexpected error comparing SkuID %s with SkuItem %s in App '%s': %s", 
-                                                     skuId, skuitem.get('Id', 'N/A'), appitem.get('DisplayName', 'Unknown'), e, exc_info=True)
+                    # 1. Determine Application Name
+                    if app_id_str in kmsdb.appItems:
+                        determined_app_name = kmsdb.appItems[app_id_str].get('DisplayName', app_id_str)
+                    else:
+                        # Fallback for older KmsDataBase structure or if AppID not directly in appItems top level
+                        for app_item_data in kmsdb.appItems.values():
+                            if app_item_data.get('Id') == app_id_str:
+                                determined_app_name = app_item_data.get('DisplayName', app_id_str)
+                                break
 
-                            if foundSku:
-                                break # Exit kmsitems loop
-                        
-                        if foundSku:
-                            break # Exit appitems loop (we found the Sku and its associated App)
-
-                except IndexError:
-                    loggersrv.error("kmsdb structure invalid, index 2 (AppItems) not found.")
+                    # 2. Determine SKU Name (and potentially refine App Name if SKU implies a specific App Group)
+                    # Iterate through AppItems, then KmsItems, then SkuItems
+                    found_sku_within_app = False
+                    for app_item_key, app_item_data in kmsdb.appItems.items():
+                        for kms_item_key, kms_item_data in app_item_data.get('KmsItems', {}).items():
+                            if sku_id_str in kms_item_data.get('SkuItems', {}):
+                                sku_data = kms_item_data['SkuItems'][sku_id_str]
+                                determined_sku_name = sku_data.get('DisplayName', sku_id_str)
+                                # If SKU is found, the AppItem it belongs to is the definitive Application Group
+                                if app_item_key == app_id_str: # Prioritize if current AppItem matches request AppID
+                                     determined_app_name = app_item_data.get('DisplayName', app_id_str)
+                                elif not found_sku_within_app: # Otherwise, take the AppItem where SKU was found
+                                     # This handles cases where SkuID might be under a different AppID in XML than requested
+                                     # but it is less common.
+                                     determined_app_name = app_item_data.get('DisplayName', app_id_str)
+                                found_sku_within_app = True
+                                break # SKU found
+                        if found_sku_within_app:
+                            break # SKU found, no need to check other AppItems
+                
                 except Exception as e:
                     loggersrv.error("Unexpected error during product name lookup: %s", e, exc_info=True)
 
-                # Log warning only if SkuName wasn't updated
-                if not foundSku:
+                if determined_sku_name == sku_id_str:
                      pretty_printer(log_obj = loggersrv.warning,
-                                    put_text = "{reverse}{yellow}{bold}Can't find a name for this product ! (SkuID: %s){end}" % skuId)
-                # Log warning if AppName wasn't updated (optional)
-                # if not foundApp:
-                #      pretty_printer(log_obj = loggersrv.warning,
-                #                     put_text = "{reverse}{yellow}{bold}Can't find a name for this application group ! (AppID: %s){end}" % applicationId)
+                                    put_text = "{reverse}{yellow}{bold}Can't find a name for this product SKU! (SkuID: %s){end}" % sku_id_str)
+                if determined_app_name == app_id_str and not found_sku_within_app:
+                     # Only warn about app name if we didn't find the SKU under *any* app that might have refined it.
+                     # If an SKU is found, its parent app is considered the correct one.
+                     pretty_printer(log_obj = loggersrv.warning,
+                                    put_text = "{reverse}{yellow}{bold}Can't find a name for this application group! (AppID: %s){end}" % app_id_str)
 
                 # *** Log product name lookup results ***
-                loggersrv.debug("Product Name Lookup: AppName='%s', SkuName='%s'", appName, skuName)
+                loggersrv.debug("Product Name Lookup: AppName='%s', SkuName='%s'", determined_app_name, determined_sku_name)
 
                 infoDict = {
                         "machineName" : kmsRequest.getMachineName(),
-                        "clientMachineId" : str(clientMachineId), # Original CMID
-                        "appId" : str(applicationId),             # Original AppId (UUID string)
-                        "applicationName": appName,               # Looked-up App Name
-                        "skuId" : str(skuId),                   # Original SkuId (UUID string)
-                        "skuName": skuName,                     # Looked-up Sku Name
+                        "clientMachineId" : str(clientMachineId), 
+                        "appId" : app_id_str,             
+                        "applicationName": determined_app_name,               
+                        "skuId" : sku_id_str,                   
+                        "skuName": determined_sku_name,                     
                         "licenseStatus" : kmsRequest.getLicenseStatus(),
                         "requestTime" : int(time.time()),
                         "kmsEpid" : None,
