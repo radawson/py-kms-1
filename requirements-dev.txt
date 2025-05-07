@@ -18,6 +18,8 @@ cachecontrol==0.14.3
     # via -r requirements-dev.in
 certifi==2025.4.26
     # via requests
+cffi==1.17.1
+    # via cryptography
 charset-normalizer==3.4.2
     # via requests
 click==8.1.8
@@ -28,6 +30,8 @@ commonmark==0.9.1
     # via
     #   -r requirements-dev.in
     #   recommonmark
+cryptography==44.0.3
+    # via -r /home/torvaldsl/py-kms-1/requirements.in
 distlib==0.3.9
     # via -r requirements-dev.in
 distro==1.9.0
@@ -79,6 +83,8 @@ progress==1.6
     # via -r requirements-dev.in
 psycopg2-binary==2.9.10
     # via -r /home/torvaldsl/py-kms-1/requirements.in
+pycparser==2.22
+    # via cffi
 pygments==2.19.1
     # via
     #   -r requirements-dev.in
@@ -88,7 +94,11 @@ pymysql==1.1.1
 pytoml==0.1.21
     # via -r requirements-dev.in
 pytz==2025.2
-    # via -r requirements-dev.in
+    # via
+    #   -r /home/torvaldsl/py-kms-1/requirements.in
+    #   -r requirements-dev.in
+pyyaml==6.0.2
+    # via -r /home/torvaldsl/py-kms-1/requirements.in
 recommonmark==0.7.1
     # via -r requirements-dev.in
 requests==2.32.3
@@ -143,6 +153,8 @@ toml==0.10.2
     # via -r /home/torvaldsl/py-kms-1/requirements.in
 typing-extensions==4.13.2
     # via sqlalchemy
+tzlocal==5.3.1
+    # via -r /home/torvaldsl/py-kms-1/requirements.in
 urllib3==2.4.0
     # via
     #   -r /home/torvaldsl/py-kms-1/requirements.in

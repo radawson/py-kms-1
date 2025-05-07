@@ -8,11 +8,15 @@ blinker==1.9.0
     # via flask
 certifi==2025.4.26
     # via requests
+cffi==1.17.1
+    # via cryptography
 charset-normalizer==3.4.2
     # via requests
 click==8.1.8
     # via flask
 colorama==0.4.6
+    # via -r requirements.in
+cryptography==44.0.3
     # via -r requirements.in
 flask==3.1.0
     # via -r requirements.in
@@ -35,6 +39,8 @@ packaging==25.0
     # via -r requirements.in
 psycopg2-binary==2.9.10
     # via -r requirements.in
+pycparser==2.22
+    # via cffi
 pymysql==1.1.1
     # via -r requirements.in
 pytz==2025.2

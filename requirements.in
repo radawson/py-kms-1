@@ -1,4 +1,5 @@
 # Core dependencies
+cryptography>=44.0.3  # Cryptography library
 Flask>=3.0.2  # Web interface
 SQLAlchemy>=2.0.28  # Database ORM
 psycopg2-binary>=2.9.9  # PostgreSQL adapter
