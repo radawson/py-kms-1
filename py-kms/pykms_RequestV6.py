@@ -5,7 +5,7 @@ import hmac
 import struct
 import logging
 
-import pykms_Aes as aes
+import pykms_Aes2 as aes
 from pykms_Base import kmsBase
 from pykms_RequestV5 import kmsRequestV5
 from pykms_Structure import Structure
