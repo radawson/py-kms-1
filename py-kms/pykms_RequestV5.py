@@ -5,7 +5,7 @@ import binascii
 import hashlib
 import random
 
-import pykms_Aes2 as aes
+import pykms_Aes as aes
 from pykms_Base import kmsBase
 from pykms_Structure import Structure
 from pykms_Format import justify, byterize, enco, deco, pretty_printer
