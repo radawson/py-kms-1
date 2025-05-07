@@ -180,11 +180,11 @@ could be detected as not genuine !{end}" %currentClientCount)
 
                 try:
                     # 1. Determine Application Name
-                    if app_id_str in kmsdb.appItems:
-                        determined_app_name = kmsdb.appItems[app_id_str].get('DisplayName', app_id_str)
+                    if app_id_str in kmsdb['appItems']:
+                        determined_app_name = kmsdb['appItems'][app_id_str].get('DisplayName', app_id_str)
                     else:
                         # Fallback for older KmsDataBase structure or if AppID not directly in appItems top level
-                        for app_item_data in kmsdb.appItems.values():
+                        for app_item_data in kmsdb['appItems'].values():
                             if app_item_data.get('Id') == app_id_str:
                                 determined_app_name = app_item_data.get('DisplayName', app_id_str)
                                 break
@@ -192,7 +192,7 @@ could be detected as not genuine !{end}" %currentClientCount)
                     # 2. Determine SKU Name (and potentially refine App Name if SKU implies a specific App Group)
                     # Iterate through AppItems, then KmsItems, then SkuItems
                     found_sku_within_app = False
-                    for app_item_key, app_item_data in kmsdb.appItems.items():
+                    for app_item_key, app_item_data in kmsdb['appItems'].items():
                         for kms_item_key, kms_item_data in app_item_data.get('KmsItems', {}).items():
                             if sku_id_str in kms_item_data.get('SkuItems', {}):
                                 sku_data = kms_item_data['SkuItems'][sku_id_str]
