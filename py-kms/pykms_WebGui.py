@@ -2,7 +2,7 @@
 
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask import Flask, render_template, jsonify, request, current_app
 from pykms_Database import create_backend
 import yaml # Import yaml
@@ -46,7 +46,24 @@ def index():
             or (getattr(c, 'skuName', None) and 'Office' in str(c.skuName))
         )
     }
-    return render_template('dashboard.html', stats=stats, clients=clients, unknown_activations=unknown_activations)
+    # Recent activations: last 7 days, max 10, deduplicated by (clientMachineId, applicationId)
+    cutoff = datetime.now() - timedelta(days=7)
+    seen = set()
+    recent_activations = []
+    # Sort by lastRequestTime descending
+    sorted_clients = sorted(
+        [c for c in clients if c.lastRequestTime and c.lastRequestTime >= cutoff],
+        key=lambda c: c.lastRequestTime,
+        reverse=True
+    )
+    for c in sorted_clients:
+        key = (getattr(c, 'clientMachineId', None), getattr(c, 'applicationId', None))
+        if key not in seen:
+            seen.add(key)
+            recent_activations.append(c)
+        if len(recent_activations) >= 10:
+            break
+    return render_template('dashboard.html', stats=stats, clients=clients, unknown_activations=unknown_activations, recent_activations=recent_activations)
 
 @app.route('/clients')
 def client_list():
