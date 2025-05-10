@@ -43,7 +43,7 @@ docutils==0.21.2
     #   sphinx
 flask==3.1.0
     # via -r /home/torvaldsl/py-kms-1/requirements.in
-greenlet==3.2.1
+greenlet==3.2.2
     # via sqlalchemy
 html5lib==1.1
     # via -r requirements-dev.in
@@ -115,7 +115,7 @@ six==1.17.0
     #   -r requirements-dev.in
     #   html5lib
     #   retrying
-snowballstemmer==2.2.0
+snowballstemmer==3.0.1
     # via sphinx
 sphinx==8.2.3
     # via
