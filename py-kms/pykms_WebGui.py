@@ -35,8 +35,16 @@ def index():
     stats = {
         'total_clients': len(clients),
         'active_clients': sum(1 for c in clients if c.licenseStatus == 'Activated'),
-        'windows_clients': sum(1 for c in clients if 'Windows' in str(c.applicationId)),
-        'office_clients': sum(1 for c in clients if 'Office' in str(c.applicationId))
+        'windows_clients': sum(
+            1 for c in clients
+            if (getattr(c, 'applicationName', None) and 'Windows' in str(c.applicationName))
+            or (getattr(c, 'skuName', None) and 'Windows' in str(c.skuName))
+        ),
+        'office_clients': sum(
+            1 for c in clients
+            if (getattr(c, 'applicationName', None) and 'Office' in str(c.applicationName))
+            or (getattr(c, 'skuName', None) and 'Office' in str(c.skuName))
+        )
     }
     return render_template('dashboard.html', stats=stats, clients=clients, unknown_activations=unknown_activations)
 
