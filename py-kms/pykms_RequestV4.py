@@ -6,7 +6,7 @@ import logging
 
 from pykms_Base import kmsBase
 from pykms_Structure import Structure
-from pykms_Aes2 import AES
+from pykms_Aes import AES
 from pykms_Format import justify, byterize, enco, deco, pretty_printer
 
 #---------------------------------------------------------------------------------------------------------------------------------------------------------
