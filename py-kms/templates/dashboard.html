@@ -114,7 +114,7 @@
                         <td>{{ client.machineName }}</td>
                         <td>{{ client.applicationId }}</td>
                         <td>
-                            <span class="badge {% if client.licenseStatus == 'Licensed' %}bg-success{% else %}bg-warning{% endif %}">
+                            <span class="badge {% if client.licenseStatus == 'Activated' or client.licenseStatus == 'Licensed' %}bg-success{% else %}bg-warning{% endif %}">
                                 {{ client.licenseStatus }}
                             </span>
                         </td>
